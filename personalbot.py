@@ -3,7 +3,7 @@
 # /// script
 # requires-python = "~=3.13.9"
 # dependencies = [
-#     "openai>=2.7.0",
+#     "openai>=2.8.0",
 #     "anthropic>=0.72.0",
 #     "prompt-toolkit>=3.0.51",
 #     "pydantic>=2.11.7",
@@ -87,7 +87,7 @@ You will have access to some existing helpers that will be pre-imported into you
 
 <available_libraries>
 dependencies = [
-  "openai>=2.7.0",
+  "openai>=2.8.0",
   "pydantic>=2.11.7",
   "pymysql>=1.1.1",
   "psycopg>=3.2.10",
@@ -424,7 +424,7 @@ class Helpers:
         self,
         instructions: str,
         input: str,
-        model: Literal["gpt-5", "gpt-5-mini"] = "gpt-5",
+        model: Literal["gpt-5.1", "gpt-5-mini"] = "gpt-5.1",
         reasoning_effort: Literal["low", "medium", "high"] = "high",
     ):
         api_key = os.environ.get("OPENAI_API_KEY")
@@ -462,7 +462,7 @@ class Helpers:
         ]
 
         response = self.openai_client.responses.create(
-            model="gpt-5",
+            model="gpt-5.1",
             input=input,
             tools=[tool],
             tool_choice="auto",
@@ -1257,7 +1257,7 @@ def openai_call(
             openai_service_tier = "default"
 
     with client.responses.stream(
-        model="gpt-5",
+        model="gpt-5.1",
         reasoning={"effort": "high", "summary": "detailed"},
         instructions=instructions,
         tools=[openai_python_exec_tool],
@@ -1268,6 +1268,7 @@ def openai_call(
         previous_response_id=None,
         store=False,
         service_tier=openai_service_tier,
+        prompt_cache_retention="24h",
     ) as stream:
         current_tool_call_id = None
         for event in stream:
