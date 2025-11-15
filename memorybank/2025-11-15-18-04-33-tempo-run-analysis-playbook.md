@@ -652,3 +652,327 @@ With this playbook, anyone using the same FIT file and code paths will:
   and max elevation gain/loss.
 - Compute **identical pace, HR, power, and elevation statistics** for
   each sub‑region.
+
+---
+
+## 7. Appendix: Advanced tempo analyses
+
+This appendix describes three deeper analyses that build on the core tempo
+playbook:
+
+1. **Elevation‑adjusted pace (GAP)** per tempo mile.
+2. **Cardio–mechanical decoupling** across the tempo.
+3. **Micro‑structure of the finishing segment.**
+
+Each follows the same pattern: natural language intent, then a precise code
+implementation that reuses the earlier helpers (`fmt_pace`, `time_at_distance`,
+`trimmed_stats`, `lap_recs` with `dist_rel_m`, `dist_rel_mi`, `alt_m`).
+
+### 7.1 Elevation‑adjusted pace (GAP) per tempo mile
+
+**Intent (natural language)**
+
+Raw pace on hilly terrain can be misleading. We want a **grade‑adjusted pace
+(GAP)** per full tempo mile that answers:
+
+> “If this mile had been run on flat ground, what pace would correspond to the
+> same effort, given its average grade?”
+
+We define a simple model:
+
+- For each full mile of the tempo (0–1, 1–2, 2–3, 3–4 miles relative to tempo
+  start):
+  - Compute **net grade** as `(alt_end − alt_start) / distance`.
+  - Convert to percent: `grade_pct = grade * 100`.
+  - Adjust pace by **15 s/mi per 1% grade** (positive grade = uphill):
+
+    \[ 	ext{GAP} = 	ext{raw pace} - 15\,	ext{s/mi} 	imes 	ext{grade\_%} \]
+
+This coefficient is a reasonable rule‑of‑thumb. The goal is consistency inside
+this playbook, not perfect physiology.
+
+**Formal code definition**
+
+```python
+import numpy as np
+
+# Assumes: lap_recs from slice_tempo_records, MI_IN_M, fmt_pace, time_at_distance
+
+
+def gap_per_tempo_mile(lap_recs: pd.DataFrame,
+                        coef_s_per_pct: float = 15.0) -> list[dict]:
+    """Compute GAP (grade‑adjusted pace) for each full mile of the tempo.
+
+    coef_s_per_pct: seconds per mile per 1% grade.
+    """
+    D_rel = lap_recs["dist_rel_m"].to_numpy()
+    A = lap_recs["alt_m"].to_numpy()
+    T = lap_recs["timestamp"].astype("int64").to_numpy() / 1e9
+
+    lap_total_m = float(D_rel.max())
+    lap_total_mi = lap_total_m / MI_IN_M
+
+    # Define full‑mile segments strictly inside the tempo
+    mile_ranges = []
+    start = 0.0
+    while start + 1.0 <= lap_total_mi + 1e-6:
+        mile_ranges.append((start, start + 1.0))
+        start += 1.0
+
+    out = []
+    for s_mi, e_mi in mile_ranges:
+        d0 = s_mi * MI_IN_M
+        d1 = e_mi * MI_IN_M
+
+        # Interpolate altitudes at boundaries
+        def alt_at(d: float) -> float:
+            if d <= D_rel[0]:
+                return float(A[0])
+            if d >= D_rel[-1]:
+                return float(A[-1])
+            idx = np.searchsorted(D_rel, d, side="left")
+            if idx == 0:
+                return float(A[0])
+            if idx >= len(D_rel):
+                return float(A[-1])
+            d_prev, d_next = D_rel[idx - 1], D_rel[idx]
+            a_prev, a_next = A[idx - 1], A[idx]
+            if d_next == d_prev:
+                return float(a_next)
+            frac = (d - d_prev) / (d_next - d_prev)
+            return float(a_prev + frac * (a_next - a_prev))
+
+        a0 = alt_at(d0)
+        a1 = alt_at(d1)
+        net_gain_m = a1 - a0
+        dist_m = d1 - d0
+        grade = net_gain_m / dist_m if dist_m > 0 else 0.0
+        grade_pct = grade * 100.0
+
+        # Raw pace from duration of the exact 1‑mile window
+        t_start = time_at_distance(D_rel, T, d0)
+        t_end = time_at_distance(D_rel, T, d1)
+        raw_pace_s = t_end - t_start  # 1‑mile duration
+
+        gap_pace_s = raw_pace_s - coef_s_per_pct * grade_pct
+
+        out.append({
+            "start_mi": s_mi,
+            "end_mi": e_mi,
+            "grade_pct": grade_pct,
+            "raw_pace_s": raw_pace_s,
+            "gap_pace_s": gap_pace_s,
+            "raw_pace": fmt_pace(raw_pace_s),
+            "gap_pace": fmt_pace(gap_pace_s),
+        })
+
+    return out
+```
+
+This gives, for each tempo mile, a `raw_pace` and `gap_pace` that can be
+compared across miles to assess whether apparent pace differences are driven
+by terrain or by effort.
+
+---
+
+### 7.2 Cardio–mechanical decoupling across the tempo
+
+**Intent (natural language)**
+
+We want to quantify how much **heart‑rate drifts relative to mechanical output**
+over the tempo segment. In other words:
+
+> “As the tempo progresses, do I need more HR to maintain the same pace/power?”
+
+We define decoupling at two levels:
+
+1. **Per full mile within the tempo**:
+   - For each 1‑mile window (0–1, 1–2, 2–3, 3–4):
+     - Compute avg HR, avg power, and average pace.
+     - Derive **pace per watt** (sec/mi/W) and **pace per bpm** (sec/mi/bpm).
+
+2. **First half vs second half of the tempo** (e.g. miles 0–2 vs 2–4):
+   - Compare mean HR, mean power, and mean GAP or raw pace between halves.
+   - A large increase in HR for similar or slower pace/power indicates
+     cardio–mechanical decoupling.
+
+**Formal code definition**
+
+```python
+import numpy as np
+
+# Assumes: lap_recs, MI_IN_M, fmt_pace, time_at_distance, gap_per_tempo_mile
+
+
+def cardio_mechanical_decoupling(lap_recs: pd.DataFrame) -> dict:
+    """Compute decoupling metrics per tempo mile and for first vs second half.
+
+    Returns:
+      - 'per_mile': list of dicts for each full tempo mile.
+      - 'halves': summary for first and second half.
+    """
+    D_rel = lap_recs["dist_rel_m"].to_numpy()
+    T = lap_recs["timestamp"].astype("int64").to_numpy() / 1e9
+
+    lap_total_m = float(D_rel.max())
+    lap_total_mi = lap_total_m / MI_IN_M
+
+    # Full mile windows inside tempo
+    mile_ranges = []
+    start = 0.0
+    while start + 1.0 <= lap_total_mi + 1e-6:
+        mile_ranges.append((start, start + 1.0))
+        start += 1.0
+
+    per_mile = []
+    for s_mi, e_mi in mile_ranges:
+        d0 = s_mi * MI_IN_M
+        d1 = e_mi * MI_IN_M
+        t_start = time_at_distance(D_rel, T, d0)
+        t_end = time_at_distance(D_rel, T, d1)
+        dur = t_end - t_start  # seconds for exactly 1 mile
+
+        mask = (lap_recs["dist_rel_m"] >= d0) & (lap_recs["dist_rel_m"] <= d1)
+        sub = lap_recs.loc[mask]
+
+        avg_hr = float(sub["hr_bpm"].mean()) if not sub.empty else float("nan")
+        avg_pwr = float(sub["power"].mean()) if not sub.empty else float("nan")
+
+        pace_per_watt = dur / avg_pwr if avg_pwr > 0 else float("nan")
+        pace_per_bpm = dur / avg_hr if avg_hr > 0 else float("nan")
+
+        per_mile.append({
+            "start_mi": s_mi,
+            "end_mi": e_mi,
+            "avg_hr": avg_hr,
+            "avg_power": avg_pwr,
+            "avg_pace_s": dur,
+            "avg_pace": fmt_pace(dur),
+            "pace_per_watt": pace_per_watt,
+            "pace_per_bpm": pace_per_bpm,
+        })
+
+    # Halves: split miles into early and late sets
+    if not per_mile:
+        return {"per_mile": [], "halves": {}}
+
+    mid_mi = 0.5 * (per_mile[0]["start_mi"] + per_mile[-1]["end_mi"])
+
+    first_half = [m for m in per_mile if m["end_mi"] <= mid_mi]
+    second_half = [m for m in per_mile if m["start_mi"] >= mid_mi]
+
+    def avg_dict(group):
+        if not group:
+            return {}
+        return {
+            "avg_hr": float(np.mean([g["avg_hr"] for g in group])),
+            "avg_power": float(np.mean([g["avg_power"] for g in group])),
+            "avg_pace_s": float(np.mean([g["avg_pace_s"] for g in group])),
+        }
+
+    halves = {
+        "first_half": avg_dict(first_half),
+        "second_half": avg_dict(second_half),
+    }
+
+    return {"per_mile": per_mile, "halves": halves}
+```
+
+Interpretation example:
+
+- If first‑half and second‑half **avg_hr** differ significantly while
+  **avg_power** and **GAP pace** are similar, you have clear decoupling.
+- In the worked example, HR rises by ~8 bpm while GAP pace only slows by a
+  few seconds per mile—a small, normal amount of decoupling over ~4+ tempo
+  miles.
+
+---
+
+### 7.3 Micro‑structure of the finishing segment
+
+**Intent (natural language)**
+
+We want to understand **how the finish ramps**, not just the average over the
+last chunk. The question is:
+
+> “Across the last X miles of the tempo, do I gradually squeeze the pace, or is
+>  there a distinct final kick?”
+
+We define:
+
+- Let the tempo end at `lap_total_mi` miles (relative to tempo start).
+- Choose a finishing window length, e.g. `last_len_mi = 0.4`.
+- Divide the last `last_len_mi` into equal bins (e.g. `0.1`‑mile bins).
+- For each bin, compute **avg pace, avg HR, avg power**.
+
+**Formal code definition**
+
+```python
+# Assumes: lap_recs, MI_IN_M, fmt_pace, time_at_distance
+
+
+def finishing_microstructure(lap_recs: pd.DataFrame,
+                             last_len_mi: float = 0.4,
+                             bin_size_mi: float = 0.1) -> list[dict]:
+    """Analyze micro‑structure of the finishing segment of the tempo.
+
+    Returns a list of bins from (lap_total_mi - last_len_mi) to lap_total_mi,
+    each with avg pace, HR, and power.
+    """
+    D_rel = lap_recs["dist_rel_m"].to_numpy()
+    T = lap_recs["timestamp"].astype("int64").to_numpy() / 1e9
+
+    lap_total_m = float(D_rel.max())
+    lap_total_mi = lap_total_m / MI_IN_M
+
+    start_mi = max(0.0, lap_total_mi - last_len_mi)
+    end_mi = lap_total_mi
+
+    bins = []
+    cur = start_mi
+    while cur < end_mi - 1e-6:
+        bins.append((cur, min(cur + bin_size_mi, end_mi)))
+        cur += bin_size_mi
+
+    out = []
+    for s_mi, e_mi in bins:
+        d0 = s_mi * MI_IN_M
+        d1 = e_mi * MI_IN_M
+
+        t_start = time_at_distance(D_rel, T, d0)
+        t_end = time_at_distance(D_rel, T, d1)
+        dur = t_end - t_start
+
+        dist_m = d1 - d0
+        dist_mi = dist_m / MI_IN_M if dist_m > 0 else float("nan")
+
+        mask = (lap_recs["dist_rel_m"] >= d0) & (lap_recs["dist_rel_m"] <= d1)
+        sub = lap_recs.loc[mask]
+
+        avg_pace_s = dur / dist_mi if dist_mi > 0 else float("nan")
+        avg_hr = float(sub["hr_bpm"].mean()) if not sub.empty else float("nan")
+        avg_power = float(sub["power"].mean()) if not sub.empty else float("nan")
+
+        out.append({
+            "start_mi_rel": s_mi,
+            "end_mi_rel": e_mi,
+            "distance_mi": dist_mi,
+            "avg_pace_s": avg_pace_s,
+            "avg_pace": fmt_pace(avg_pace_s) if not np.isnan(avg_pace_s) else "nan",
+            "avg_hr": avg_hr,
+            "avg_power": avg_power,
+        })
+
+    return out
+```
+
+On your example tempo, using `last_len_mi=0.4` and `bin_size_mi=0.1` produced:
+
+- Three bins around ~6:14–6:20/mi at ~330 W and ~183 bpm.
+- A final ~0.07‑mile bin at ~5:47/mi and ~352 W with HR ≈185 bpm.
+
+That pattern is a classic **late kick**: strong but controlled effort for most
+of the finishing segment, then a distinct final surge. Running this on other
+tempos with the same code makes those comparisons objective.
+
+---
