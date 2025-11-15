@@ -978,3 +978,168 @@ of the finishing segment, then a distinct final surge. Running this on other
 tempos with the same code makes those comparisons objective.
 
 ---
+
+### 7.4 Appendix: Apple Watch / HealthFit–specific metrics
+
+When the FIT file comes **directly from Apple Watch via HealthFit** (rather
+than re‑exported by TrainingPeaks), there are several additional metrics and
+metadata that can enrich tempo analysis.
+
+This section is descriptive rather than code‑heavy; it highlights what’s
+available and what might be interesting to analyze.
+
+#### 7.4.1 Differences vs TrainingPeaks FIT exports
+
+From the same run, we observed the following **systematic differences** between
+an Apple Watch/HealthFit FIT and the TrainingPeaks‑exported FIT:
+
+- **Device identity / metadata**
+  - TrainingPeaks FIT:
+    - `file_id.manufacturer = peaksware`
+    - `device_info.product_name = "TrainingPeaks"`
+  - Apple Watch FIT:
+    - `file_id.manufacturer = development`
+    - `file_id.product_name = "Watch6,18"` (or similar model ID)
+    - `device_info.descriptor` contains the watch name and OS version
+      (e.g., "Hao’s Apple Watch (26.1)").
+
+- **Developer data / session‑level metadata** (Apple‑only)
+  - `developer_data_id` + `field_description` define custom fields such as:
+    - `SESSION UUID`
+    - `SESSION INDOOR`
+    - `SESSION ACTIVITY TYPE`
+    - `SESSION WEATHER HUMIDITY`
+    - `WORKOUT RPE ESTIMATED`
+  - TrainingPeaks export typically **drops** these developer fields.
+
+- **Record‑level fields**
+  - TrainingPeaks FIT `record` fields (typical):
+    - `timestamp`
+    - `distance`
+    - `enhanced_speed`
+    - `altitude/enhanced_altitude`
+    - `heart_rate`
+    - `cadence`
+    - `power`
+    - `position_lat/long`
+    - `calories`
+    - Note: TP may add per‑record `calories`.
+  - Apple Watch FIT `record` fields add:
+    - `accumulated_power`
+    - `gps_accuracy`
+    - `stance_time`
+    - `step_length`
+    - `vertical_oscillation`
+    - `vertical_ratio`
+  - TrainingPeaks export **drops** these biomechanics metrics.
+
+- **Time series differences**
+  - Timestamps mostly align 1:1, but:
+    - The Apple file typically has a few more `record` entries.
+    - Distance, power, and sometimes speed differ slightly per sample due to
+      different smoothing and encoding.
+  - At the **lap summary** level (total distance, avg power/HR) the numbers are
+    essentially identical between the two FITs.
+
+For the tempo analyses in this playbook (LT2 HR/power/pace, tempo miles,
+rolling miles, etc.), both FIT variants yield essentially **identical
+conclusions**. The Apple Watch file is simply richer in *extra* fields.
+
+#### 7.4.2 Interpreting Apple Watch cadence and form metrics
+
+Apple’s running FIT fields use conventions that are easy to misinterpret if you
+assume they are already in “usual runner” units.
+
+- **Cadence (`record.cadence`)**
+  - For running, this is typically **strides per minute**, not steps per minute.
+  - One stride ≈ two steps. So:
+    - `cadence = 84` in the FIT ≈ **168 steps per minute** in common parlance.
+  - Lap fields such as `total_strides` and `avg_running_cadence` can be used to
+    cross‑check this.
+
+- **Step length (`step_length`)**
+  - Observed on Apple Watch FIT as values around ~770–1600.
+  - For a typical adult runner, this makes sense if `step_length` is in
+    **millimeters**.
+    - E.g., `1300` ≈ 1.30 m per step.
+  - When presenting this in analysis, it’s natural to convert to **meters**.
+
+- **Stance time (`stance_time`)**
+  - Observed around ~175–230.
+  - Fits well with **milliseconds per step** (e.g., 200 ms stance time).
+
+- **Vertical oscillation (`vertical_oscillation`)**
+  - Values around ~82–112.
+  - Interpretable as **millimeters** of bounce.
+    - E.g., `96` ≈ 9.6 cm vertical oscillation.
+
+- **Vertical ratio (`vertical_ratio`)**
+  - Values roughly in the 5–13 range.
+  - This aligns with a **percentage**, e.g., 7–10% vertical ratio.
+
+These metrics become most informative when averaged over sub‑regions, e.g.
+per tempo mile or per rolling mile (as with power/HR), rather than inspecting
+instantaneous values.
+
+#### 7.4.3 Which Apple‑only attributes are interesting for tempo analysis?
+
+Within tempo analysis, the most practically interesting Apple‑only metrics are:
+
+1. **Step length (m)**
+   - Combined with cadence and speed, it tells you whether you are running
+     “fast” by turning over more, by lengthening stride, or both.
+   - For example, in the worked tempo:
+     - Earlier uphill miles had shorter step length (~1.38–1.40 m).
+     - Later faster miles (especially the final chunk) had longer step length
+       (~1.50 m), at similar or slightly higher cadence.
+
+2. **Cadence (strides/min, or steps/min if multiplied by 2)**
+   - Helps distinguish between “muscular” vs “springy” tempo miles:
+     - Uphill high‑power miles: often slightly lower cadence, more push per step.
+     - Downhill or faster miles: sometimes slightly higher cadence.
+   - For consistent analysis, it’s useful to present both:
+     - `cadence_strides_per_min` (raw from FIT), and
+     - `cadence_steps_per_min = 2 * cadence_strides_per_min`.
+
+3. **Stance time (ms)**
+   - Shorter stance times often correlate with more efficient/faster running,
+     though this is individual.
+   - In the example tempo:
+     - The fastest rolling mile and the finishing chunk showed **shorter
+       stance times** (~189–191 ms) vs earlier uphill miles (~195–198 ms).
+
+4. **Vertical oscillation (cm) and vertical ratio (%)**
+   - These give a feel for how much “up‑and‑down” movement you have at a given
+     pace.
+   - Potential interpretations:
+     - Slightly **lower vertical ratio and oscillation** in the best late tempo
+       miles may indicate more horizontal, economical motion.
+     - Large changes between segments (e.g., uphill vs downhill) could flag
+       form differences worth exploring.
+
+5. **Accumulated power (`accumulated_power`)**
+   - Not strictly necessary if you are already working with `power` per
+     record, but can be used as an alternate consistency check or for custom
+     energy expenditure calculations.
+
+#### 7.4.4 Practical use
+
+For our tempo‑specific workflow:
+
+- The **core LT2 and tempo metrics do not depend** on these extra fields; they
+  are based on HR, power, pace, and distance.
+- When an Apple/HealthFit FIT is available, we can **optionally layer on**:
+  - Step length, cadence, stance time, vertical oscillation/ratio for each of
+    the 12 “interesting” sub‑regions (tempo miles, fastest/slowest miles,
+    highest/lowest‑power miles, max‑gain/loss miles).
+- This allows form‑oriented questions like:
+  - “Is my stride different in the fastest vs highest‑power mile?”
+  - “Do I become more bouncy or spend longer on the ground as I fatigue in a
+     tempo?”
+
+Even without additional formal code in this playbook, these definitions and
+interpretations should be sufficient for a reader to extend the analysis with
+Apple‑specific metrics when the FIT source is the watch rather than a
+third‑party export.
+
+---
