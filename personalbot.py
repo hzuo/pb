@@ -19,7 +19,7 @@
 #     "pymupdf>=1.26.3",
 #     "matplotlib>=3.10.6",
 #     "humanize>=4.13.0",
-#     "lxml>=6.0.1",
+#     "lxml>=6.0.2",
 #     "beautifulsoup4>=4.13.5",
 #     "markdownify>=1.2.0",
 #     "pillow>=11.3.0",
@@ -30,6 +30,7 @@
 #     "pyjwt[crypto]>=2.10.1",
 #     "paramiko>=4.0.0",
 #     "fabric>=3.2.2",
+#     "fitdecode>=0.11.0",
 # ]
 # ///
 
@@ -110,6 +111,7 @@ dependencies = [
   "pyjwt[crypto]>=2.10.1",
   "paramiko>=4.0.0",
   "fabric>=3.2.2",
+  "fitdecode>=0.11.0",
 ]
 </available_libraries>
 
