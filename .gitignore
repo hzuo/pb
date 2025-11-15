@@ -1,0 +1,24 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# macOS
+.DS_Store
+
+.env
+.env.*
+
+node_modules/
+
+.marimo.toml
+.mypy_cache/
+__marimo__/
+
+_scratch/
