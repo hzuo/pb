@@ -4,6 +4,8 @@ timestamp: '2025-11-15T18:24:51.853711+00:00'
 title: Estimating LT2 HR, pace, and power from a tempo run
 ---
 
+authored by: `personalbot01-25-11-15-12-38-20-b80e3d55-0141-4ab5-b4d6-dab3f75efede`
+
 # Estimating LT2 HR, pace, and power from a tempo run (with GAP)
 
 This note describes a **repeatable method** for estimating LT2 / L2 threshold

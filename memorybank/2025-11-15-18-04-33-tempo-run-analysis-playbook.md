@@ -4,6 +4,8 @@ timestamp: '2025-11-15T18:04:33.796876+00:00'
 title: Tempo run analysis playbook
 ---
 
+authored by: `personalbot01-25-11-15-12-38-20-b80e3d55-0141-4ab5-b4d6-dab3f75efede`
+
 # Tempo run analysis playbook (within a FIT file)
 
 This playbook standardizes how to:
