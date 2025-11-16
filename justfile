@@ -82,29 +82,5 @@ smoke-test:
 
 alias st := smoke-test
 
-front-events-download:
-  uv run --env-file=.env "scripts/25-10-22-wed-front-events-download.py"
-
-front-events-pull:
-  #!/usr/bin/env bash
-  set -euxo pipefail
-
-  SOURCE_DIR="./_scratch/front-events-zst"
-  TARGET_DIR="./_scratch/front-events"
-
-  mkdir -p "$SOURCE_DIR"
-  mkdir -p "$TARGET_DIR"
-
-  aws s3 sync s3://personal-dataland/front-events "$SOURCE_DIR" \
-    --exclude "*" \
-    --include "front-events-*.jsonl.zst"
-
-  for file in "$SOURCE_DIR"/*.jsonl.zst; do
-      if [ -f "$file" ]; then
-          filename=$(basename "$file" .zst)
-          output="$TARGET_DIR/${filename}"
-          if [ ! -f "$output" ] || [ "$file" -nt "$output" ]; then
-              zstd -d "$file" -o "$output" --force
-          fi
-      fi
-  done
+healthfit-download:
+  uv run --env-file=.env "scripts/25-11-16-sun-healthfit-download.py"
