@@ -1767,28 +1767,28 @@ def gemini_construct_function_response(result: PythonExecResponse) -> dict:
         }
     }
 
+    # https://docs.cloud.google.com/vertex-ai/generative-ai/docs/multimodal/function-calling
     if result.image_attachments:
         inline_parts = []
         image_refs = []
-        for index, (file_path, data_url) in enumerate(result.image_attachments):
+        for file_path, data_url in result.image_attachments:
             header, b64 = data_url.split(",", 1)
             assert header.startswith("data:"), "Invalid data URL"
             assert header.endswith(";base64"), "Invalid data URL header"
             media_type = header[len("data:") : -len(";base64")]
-            display_name = Path(file_path).name or f"python-exec-image-{index}"
             inline_parts.append(
                 {
                     "inlineData": {
                         "mimeType": media_type,
                         "data": b64,
-                        "displayName": display_name,
+                        "displayName": file_path,
                     }
                 }
             )
             image_refs.append(
                 {
-                    "$ref": display_name,
-                    "source_path": str(file_path),
+                    "image_path": file_path,
+                    "$ref": file_path,
                 }
             )
         function_response["functionResponse"]["parts"] = inline_parts
