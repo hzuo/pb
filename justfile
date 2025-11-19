@@ -20,10 +20,15 @@ bot3:
   #!/usr/bin/env bash
   uv run --env-file=.env personalbot.py -m haiku
 
+bot4:
+  #!/usr/bin/env bash
+  uv run --env-file=.env personalbot.py -m gemini
+
 alias b := bot
 alias b1 := bot
 alias b2 := bot2
 alias b3 := bot3
+alias b4 := bot4
 alias agent := bot
 
 tutorial:
