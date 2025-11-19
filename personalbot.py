@@ -1824,7 +1824,7 @@ def gemini_run_turn(history: list, turn_number: int) -> str:
                 }
             )
             dspq.join()
-            raise ValueError("Gemini returned no candidates")
+            raise ValueError("gemini returned no candidates")
 
         candidate = candidates[0]
         candidate_content = candidate.get("content") or {}
@@ -1879,7 +1879,7 @@ def gemini_run_turn(history: list, turn_number: int) -> str:
             )
             dspq.join()
             raise ValueError(
-                "Gemini requested python_exec but no valid code was returned"
+                "gemini requested python_exec but no valid code was returned"
             )
 
         history.append(
@@ -1917,7 +1917,7 @@ def gemini_validate_history(history: list):
     for item in history:
         parts = item.get("parts")
         if not isinstance(parts, list):
-            raise ValueError("Gemini history items must include 'parts'")
+            raise ValueError("gemini history items must include 'parts'")
 
         if item.get("role") == "user" and any(
             isinstance(part.get("text"), str) for part in parts
