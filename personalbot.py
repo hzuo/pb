@@ -1572,46 +1572,6 @@ def openai_validate_history(history: list):
     )
 
 
-GEMINI_MODEL_NAME = "gemini-3-pro-preview"
-GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL_NAME}:generateContent"
-GEMINI_FUNCTION_DECLARATIONS = [
-    {
-        "name": "python_exec",
-        "description": "Execute Python code in the shared python_exec sandbox and return stdout/stderr.",
-        "parameters": {
-            "type": "OBJECT",
-            "properties": {
-                "code": {
-                    "type": "STRING",
-                    "description": "Python source code to execute.",
-                }
-            },
-            "required": ["code"],
-        },
-    }
-]
-GEMINI_REQUEST_TIMEOUT = 120
-
-
-def gemini_history_to_contents(history: list) -> list[dict]:
-    contents: list[dict] = []
-    for item in history:
-        parts = item.get("parts")
-        if parts is None:
-            content = item.get("content")
-            if isinstance(content, list):
-                parts = content
-        if parts is None:
-            continue
-        contents.append(
-            {
-                "role": item.get("role") or "user",
-                "parts": parts,
-            }
-        )
-    return contents
-
-
 def gemini_extract_function_calls(candidate: dict) -> list[dict]:
     calls: list[dict] = []
     content = candidate.get("content") or {}
@@ -1619,11 +1579,10 @@ def gemini_extract_function_calls(candidate: dict) -> list[dict]:
         fc = part.get("functionCall")
         if fc:
             calls.append(fc)
-    for extra_key in ("functionCalls", "function_calls"):
-        maybe = candidate.get(extra_key)
-        if isinstance(maybe, list):
-            calls.extend(maybe)
     return calls
+
+
+gemini_model_name = "gemini-3-pro-preview"
 
 
 def gemini_call(history: list) -> dict:
@@ -1634,38 +1593,54 @@ def gemini_call(history: list) -> dict:
     api_key = os.environ.get("GEMINI_API_KEY")
     assert api_key, "GEMINI_API_KEY is not set"
 
-    payload: dict[str, Any] = {
-        "contents": gemini_history_to_contents(history),
-        "tools": [
-            {
-                "functionDeclarations": GEMINI_FUNCTION_DECLARATIONS,
-            }
-        ],
-        "toolConfig": {
-            "functionCallingConfig": {
-                "mode": "AUTO",
-            }
-        },
-        "generationConfig": {
-            "thinkingConfig": {
-                "thinkingLevel": "HIGH",
-                "includeThoughts": True,
-            }
-        },
-        "systemInstruction": {
-            "parts": [
-                {
-                    "text": instructions,
-                }
-            ]
-        },
-    }
-
     response = requests.post(
-        f"{GEMINI_API_URL}?key={api_key}",
-        headers={"Content-Type": "application/json"},
-        json=payload,
-        timeout=GEMINI_REQUEST_TIMEOUT,
+        f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model_name}:generateContent",
+        headers={
+            "Content-Type": "application/json",
+            "x-goog-api-key": api_key,
+        },
+        timeout=120,
+        json={
+            "generationConfig": {
+                "thinkingConfig": {
+                    "thinkingLevel": "HIGH",
+                    "includeThoughts": True,
+                }
+            },
+            "tools": [
+                {
+                    "functionDeclarations": [
+                        {
+                            "name": "python_exec",
+                            "description": PYTHON_EXEC_TOOL_DESCRIPTION,
+                            "parameters": {
+                                "type": "OBJECT",
+                                "properties": {
+                                    "code": {
+                                        "type": "STRING",
+                                        "description": "The Python code to execute.",
+                                    }
+                                },
+                                "required": ["code"],
+                            },
+                        }
+                    ],
+                }
+            ],
+            "toolConfig": {
+                "functionCallingConfig": {
+                    "mode": "AUTO",
+                }
+            },
+            "systemInstruction": {
+                "parts": [
+                    {
+                        "text": instructions,
+                    }
+                ]
+            },
+            "contents": history,
+        },
     )
     if not response.ok:
         dspq.put(
@@ -1770,7 +1745,7 @@ def gemini_dsp_write(res: dict):
     if usage:
         usage_copy = dict(usage)
         usage_copy["provider"] = "gemini"
-        usage_copy["model"] = res.get("modelVersion") or GEMINI_MODEL_NAME
+        usage_copy["model"] = res.get("modelVersion") or "maybe-gemini-3-pro-preview"
     else:
         usage_copy = None
 
@@ -1859,7 +1834,6 @@ def gemini_run_turn(history: list, turn_number: int) -> str:
         history.append(
             {
                 "role": role,
-                "content": parts,
                 "parts": parts,
             }
         )
@@ -1911,7 +1885,6 @@ def gemini_run_turn(history: list, turn_number: int) -> str:
         history.append(
             {
                 "role": "user",
-                "content": response_parts,
                 "parts": response_parts,
             }
         )
@@ -1927,16 +1900,14 @@ def gemini_run_turn(history: list, turn_number: int) -> str:
 
 
 def gemini_append_user_message(history: list, message: str):
-    parts = [
-        {
-            "text": message,
-        }
-    ]
     history.append(
         {
             "role": "user",
-            "content": parts,
-            "parts": parts,
+            "parts": [
+                {
+                    "text": message,
+                }
+            ],
         }
     )
 
@@ -1945,17 +1916,14 @@ def gemini_validate_history(history: list):
     found_text = False
     for item in history:
         parts = item.get("parts")
-        if parts is None:
-            content = item.get("content")
-            if isinstance(content, list):
-                parts = content
-                item["parts"] = parts
-        if (
-            item.get("role") == "user"
-            and isinstance(parts, list)
-            and any(part.get("text") for part in parts)
+        if not isinstance(parts, list):
+            raise ValueError("Gemini history items must include 'parts'")
+
+        if item.get("role") == "user" and any(
+            isinstance(part.get("text"), str) for part in parts
         ):
             found_text = True
+
     if not found_text:
         raise ValueError("history is unlikely to be gemini history")
 
