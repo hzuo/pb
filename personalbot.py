@@ -1929,9 +1929,6 @@ def gemini_validate_history(history: list):
 
 
 def get_model_interface():
-    # look for a flag that's like -m or --model and get the value
-    # it can either be "openai" or "anthropic"
-    # if not found, default to "openai"
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-m",
@@ -2485,34 +2482,35 @@ def handle_slash_command(
 
 def calc_turn_number(history: list) -> int:
     turn_number = 1
+
+    def openai_is_fake_user_turn(item: dict) -> bool:
+        return False
+
+    def anthropic_is_fake_user_turn(item: dict) -> bool:
+        content_blocks = item.get("content")
+        if not isinstance(content_blocks, list):
+            return False
+        if not content_blocks:
+            return True
+        return all(block.get("type") == "tool_result" for block in content_blocks)
+
+    def gemini_is_fake_user_turn(item: dict) -> bool:
+        part_blocks = item.get("parts")
+        if not isinstance(part_blocks, list):
+            return False
+        if not part_blocks:
+            return True
+        return all("functionResponse" in block for block in part_blocks)
+
     for item in history:
         if isinstance(item, dict) and item.get("role") == "user":
-            # handles the anthropic case where tool results are also user messages
-            # however those tool results should count as part of the assistant turn
-            # as far as we're concerned here
-            def is_fake_user_turn() -> bool:
-                blocks = None
-                content_value = item.get("content")
-                if isinstance(content_value, list):
-                    blocks = content_value
-                elif isinstance(item.get("parts"), list):
-                    blocks = item["parts"]
-
-                if blocks is None:
-                    return False
-
-                if not blocks:
-                    return True
-
-                if all(
-                    block.get("type") == "tool_result" or block.get("functionResponse")
-                    for block in blocks
-                ):
-                    return True
-                return False
-
-            if not is_fake_user_turn():
-                turn_number += 1
+            if (
+                openai_is_fake_user_turn(item)
+                or anthropic_is_fake_user_turn(item)
+                or gemini_is_fake_user_turn(item)
+            ):
+                continue
+            turn_number += 1
     return turn_number
 
 
