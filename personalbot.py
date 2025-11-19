@@ -411,6 +411,7 @@ class Helpers:
         keys = [
             "OPENAI_API_KEY",
             "ANTHROPIC_API_KEY",
+            "GEMINI_API_KEY",
         ]
         return {key: bool(os.environ.get(key)) for key in keys}
 
@@ -1571,15 +1572,368 @@ def openai_validate_history(history: list):
     )
 
 
+def gemini_extract_function_calls(candidate: dict) -> list[dict]:
+    calls: list[dict] = []
+    content = candidate.get("content") or {}
+    for part in content.get("parts", []):
+        fc = part.get("functionCall")
+        if fc:
+            calls.append(fc)
+    return calls
+
+
+gemini_model_name = "gemini-3-pro-preview"
+
+
+def gemini_call(history: list) -> dict:
+    global instructions
+    if instructions is None:
+        instructions = assemble_system_prompt()
+
+    api_key = os.environ.get("GEMINI_API_KEY")
+    assert api_key, "GEMINI_API_KEY is not set"
+
+    response = requests.post(
+        f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model_name}:generateContent",
+        headers={
+            "Content-Type": "application/json",
+            "x-goog-api-key": api_key,
+        },
+        timeout=120,
+        json={
+            "generationConfig": {
+                "thinkingConfig": {
+                    "thinkingLevel": "HIGH",
+                    "includeThoughts": True,
+                }
+            },
+            "tools": [
+                {
+                    "functionDeclarations": [
+                        {
+                            "name": "python_exec",
+                            "description": PYTHON_EXEC_TOOL_DESCRIPTION,
+                            "parameters": {
+                                "type": "OBJECT",
+                                "properties": {
+                                    "code": {
+                                        "type": "STRING",
+                                        "description": "The Python code to execute.",
+                                    }
+                                },
+                                "required": ["code"],
+                            },
+                        }
+                    ],
+                }
+            ],
+            "toolConfig": {
+                "functionCallingConfig": {
+                    "mode": "AUTO",
+                }
+            },
+            "systemInstruction": {
+                "parts": [
+                    {
+                        "text": instructions,
+                    }
+                ]
+            },
+            "contents": history,
+        },
+    )
+    if not response.ok:
+        dspq.put(
+            {
+                "type": "error",
+                "errorText": f"gemini error! {response.text}",
+            }
+        )
+    response.raise_for_status()
+    return response.json()
+
+
+def gemini_dsp_write(res: dict):
+    response_id = res.get("responseId")
+    dspq.put(
+        {
+            "type": "data-response-start",
+            "id": response_id,
+        }
+    )
+
+    candidates = res.get("candidates") or []
+    content = {}
+    if candidates:
+        content = candidates[0].get("content") or {}
+    parts = content.get("parts") or []
+
+    for part in parts:
+        if part.get("thought"):
+            part_id = part.get("thoughtSignature") or str(uuid.uuid4())
+            dspq.put(
+                {
+                    "type": "reasoning-start",
+                    "id": part_id,
+                }
+            )
+            text = part.get("text", "")
+            if text:
+                dspq.put(
+                    {
+                        "type": "reasoning-delta",
+                        "id": part_id,
+                        "delta": text,
+                    }
+                )
+            dspq.put(
+                {
+                    "type": "reasoning-end",
+                    "id": part_id,
+                }
+            )
+        elif part.get("functionCall"):
+            call = part["functionCall"]
+            call_id = (
+                call.get("id") or part.get("thoughtSignature") or str(uuid.uuid4())
+            )
+            dspq.put(
+                {
+                    "type": "tool-input-start",
+                    "toolCallId": call_id,
+                    "toolName": call.get("name"),
+                }
+            )
+            args = call.get("args") or {}
+            if args:
+                dspq.put(
+                    {
+                        "type": "tool-input-delta",
+                        "toolCallId": call_id,
+                        "delta": json.dumps(args, indent=2),
+                    }
+                )
+            dspq.put(
+                {
+                    "type": "tool-input-end",
+                    "id": call_id,
+                }
+            )
+        elif "text" in part:
+            text_id = str(uuid.uuid4())
+            dspq.put(
+                {
+                    "type": "text-start",
+                    "id": text_id,
+                }
+            )
+            dspq.put(
+                {
+                    "type": "text-delta",
+                    "id": text_id,
+                    "delta": part.get("text", ""),
+                }
+            )
+            dspq.put(
+                {
+                    "type": "text-end",
+                    "id": text_id,
+                }
+            )
+
+    usage = res.get("usageMetadata")
+    if usage:
+        usage_copy = dict(usage)
+        usage_copy["provider"] = "gemini"
+        usage_copy["model"] = res.get("modelVersion") or "maybe-gemini-3-pro-preview"
+    else:
+        usage_copy = None
+
+    dspq.put(
+        {
+            "type": "data-response-end",
+            "id": response_id,
+            "usage": usage_copy,
+        }
+    )
+
+
+def gemini_construct_function_response(result: PythonExecResponse) -> dict:
+    response_data = result.model_dump(exclude={"image_attachments"})
+    function_response: dict[str, Any] = {
+        "functionResponse": {
+            "name": "python_exec",
+            "response": response_data,
+        }
+    }
+
+    # https://docs.cloud.google.com/vertex-ai/generative-ai/docs/multimodal/function-calling
+    if result.image_attachments:
+        inline_parts = []
+        image_refs = []
+        for file_path, data_url in result.image_attachments:
+            header, b64 = data_url.split(",", 1)
+            assert header.startswith("data:"), "Invalid data URL"
+            assert header.endswith(";base64"), "Invalid data URL header"
+            media_type = header[len("data:") : -len(";base64")]
+            inline_parts.append(
+                {
+                    "inlineData": {
+                        "mimeType": media_type,
+                        "data": b64,
+                        "displayName": file_path,
+                    }
+                }
+            )
+            image_refs.append(
+                {
+                    "image_path": file_path,
+                    "$ref": file_path,
+                }
+            )
+        function_response["functionResponse"]["parts"] = inline_parts
+        response_data["image_refs"] = image_refs
+
+    return function_response
+
+
+def gemini_run_turn(history: list, turn_number: int) -> str:
+    step_number = 0
+    while True:
+        step_number += 1
+        dspq.put(
+            {
+                "type": "start-step",
+                "turn_number": turn_number,
+                "step_number": step_number,
+            }
+        )
+
+        res = gemini_call(history)
+
+        gemini_dsp_write(res)
+        dspq.join()
+
+        candidates = res.get("candidates") or []
+        if not candidates:
+            dspq.put(
+                {
+                    "type": "finish-step",
+                    "turn_number": turn_number,
+                    "step_number": step_number,
+                }
+            )
+            dspq.join()
+            raise ValueError("gemini returned no candidates")
+
+        candidate = candidates[0]
+        candidate_content = candidate.get("content") or {}
+        parts = candidate_content.get("parts", [])
+        role = candidate_content.get("role", "model")
+
+        history.append(
+            {
+                "role": role,
+                "parts": parts,
+            }
+        )
+        write_history(history)
+
+        function_calls = gemini_extract_function_calls(candidate)
+
+        if not function_calls:
+            dspq.put(
+                {
+                    "type": "finish-step",
+                    "turn_number": turn_number,
+                    "step_number": step_number,
+                }
+            )
+            dspq.join()
+
+            text_blocks = [
+                part.get("text", "")
+                for part in parts
+                if part.get("text") and not part.get("thought")
+            ]
+            return "\n".join(text_blocks).strip()
+
+        response_parts = []
+        for call in function_calls:
+            args = call.get("args") or {}
+            code = args.get("code")
+            if not isinstance(code, str):
+                continue
+            python_exec_result = python_exec(code=code)
+            response_parts.append(
+                gemini_construct_function_response(python_exec_result)
+            )
+
+        if not response_parts:
+            dspq.put(
+                {
+                    "type": "finish-step",
+                    "turn_number": turn_number,
+                    "step_number": step_number,
+                }
+            )
+            dspq.join()
+            raise ValueError(
+                "gemini requested python_exec but no valid code was returned"
+            )
+
+        history.append(
+            {
+                "role": "user",
+                "parts": response_parts,
+            }
+        )
+        write_history(history)
+
+        dspq.put(
+            {
+                "type": "finish-step",
+                "turn_number": turn_number,
+                "step_number": step_number,
+            }
+        )
+
+
+def gemini_append_user_message(history: list, message: str):
+    history.append(
+        {
+            "role": "user",
+            "parts": [
+                {
+                    "text": message,
+                }
+            ],
+        }
+    )
+
+
+def gemini_validate_history(history: list):
+    found_text = False
+    for item in history:
+        parts = item.get("parts")
+        if not isinstance(parts, list):
+            raise ValueError("gemini history items must include 'parts'")
+
+        if item.get("role") == "user" and any(
+            isinstance(part.get("text"), str) for part in parts
+        ):
+            found_text = True
+
+    if not found_text:
+        raise ValueError("history is unlikely to be gemini history")
+
+
 def get_model_interface():
-    # look for a flag that's like -m or --model and get the value
-    # it can either be "openai" or "anthropic"
-    # if not found, default to "openai"
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-m",
         "--model",
-        choices=["openai", "anthropic", "sonnet", "haiku"],
+        choices=["openai", "anthropic", "sonnet", "haiku", "gemini"],
         default="openai",
     )
     args = parser.parse_args()
@@ -1615,6 +1969,14 @@ def get_model_interface():
             "validate_history": anthropic_validate_history,
             "append_user_message": anthropic_append_user_message,
             "run_turn": anthropic_run_turn,
+        }
+    elif args.model == "gemini":
+        return {
+            "model_type": "gemini",
+            "session_namespace": "personalbot03",
+            "validate_history": gemini_validate_history,
+            "append_user_message": gemini_append_user_message,
+            "run_turn": gemini_run_turn,
         }
     else:
         raise ValueError(f"unknown model: {args.model}")
@@ -2120,24 +2482,35 @@ def handle_slash_command(
 
 def calc_turn_number(history: list) -> int:
     turn_number = 1
+
+    def openai_is_fake_user_turn(item: dict) -> bool:
+        return False
+
+    def anthropic_is_fake_user_turn(item: dict) -> bool:
+        content_blocks = item.get("content")
+        if not isinstance(content_blocks, list):
+            return False
+        if not content_blocks:
+            return True
+        return all(block.get("type") == "tool_result" for block in content_blocks)
+
+    def gemini_is_fake_user_turn(item: dict) -> bool:
+        part_blocks = item.get("parts")
+        if not isinstance(part_blocks, list):
+            return False
+        if not part_blocks:
+            return True
+        return all("functionResponse" in block for block in part_blocks)
+
     for item in history:
         if isinstance(item, dict) and item.get("role") == "user":
-            # handles the anthropic case where tool results are also user messages
-            # however those tool results should count as part of the assistant turn
-            # as far as we're concerned here
-            def is_fake_user_turn() -> bool:
-                if isinstance(item["content"], list):
-                    if not item["content"]:
-                        return True
-                    elif all(
-                        content_block.get("type") == "tool_result"
-                        for content_block in item["content"]
-                    ):
-                        return True
-                return False
-
-            if not is_fake_user_turn():
-                turn_number += 1
+            if (
+                openai_is_fake_user_turn(item)
+                or anthropic_is_fake_user_turn(item)
+                or gemini_is_fake_user_turn(item)
+            ):
+                continue
+            turn_number += 1
     return turn_number
 
 
