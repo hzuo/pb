@@ -445,90 +445,169 @@ class Helpers:
         )
         return response.output_text
 
-    # if you want to look something up on the web, this should be your first stop
-    def openai_web_search(self, input: str) -> str:
-        api_key = os.environ.get("OPENAI_API_KEY")
-        assert api_key, "OPENAI_API_KEY is not set"
-        if not self.openai_client:
-            self.openai_client = openai.OpenAI(api_key=api_key)
-
-        tool = {
-            "type": "web_search",
-            "search_context_size": "high",  # low, medium, high
-        }
-
-        include = [
-            "reasoning.encrypted_content",
-            "web_search_call.action.sources",
-        ]
-
-        response = self.openai_client.responses.create(
-            model="gpt-5.1",
-            input=input,
-            tools=[tool],
-            tool_choice="auto",
-            reasoning={
-                "effort": "high",
-                "summary": "detailed",
-            },
-            include=include,
-            previous_response_id=None,
-        )
-        return response.output_text
-
-    def anthropic_simple_call(
+    def openai_structured_output_call(
         self,
         *,
-        user_prompt: str,
-        system_prompt: str | None = None,
+        instructions: str,
+        input: str,
+        output_schema_name: str,
+        output_schema: dict[str, Any],
         # don't change these defaults unless the user says otherwise
-        model: Literal[
-            "claude-sonnet-4-5-20250929", "claude-haiku-4-5-20251001"
-        ] = "claude-sonnet-4-5-20250929",
-        thinking_budget_tokens: int = 4000,
-        max_tokens: int = 6000,
-    ) -> str:
-        anthropic_api_key = os.environ["ANTHROPIC_API_KEY"]
-        assert anthropic_api_key, "ANTHROPIC_API_KEY is not set"
-        req = {
-            "model": model,
-            "max_tokens": max_tokens,
-            "messages": [],
-        }
-        if thinking_budget_tokens > 0:
-            req["thinking"] = {
-                "type": "enabled",
-                "budget_tokens": thinking_budget_tokens,
-            }
-        if system_prompt:
-            req["system"] = system_prompt
-        req["messages"].append(
-            {
-                "role": "user",
-                "content": user_prompt,
-            }
-        )
-        res = requests.post(
-            "https://api.anthropic.com/v1/messages",
+        model: Literal["gpt-5.1", "gpt-5-mini"] = "gpt-5.1",
+        reasoning_effort: Literal["low", "medium", "high"] = "high",
+    ) -> dict[str, Any]:
+        openai_api_key = os.getenv("OPENAI_API_KEY")
+        if not openai_api_key:
+            raise RuntimeError("missing OPENAI_API_KEY")
+
+        response = requests.post(
+            "https://api.openai.com/v1/responses",
             headers={
-                "x-api-key": anthropic_api_key,
-                "anthropic-version": "2023-06-01",
-                "content-type": "application/json",
+                "Authorization": f"Bearer {openai_api_key}",
+                "Content-Type": "application/json",
             },
-            json=req,
+            json={
+                "model": model,
+                "instructions": instructions,
+                "reasoning": {
+                    "effort": reasoning_effort,
+                    "summary": "detailed",
+                },
+                "input": [
+                    {
+                        "role": "user",
+                        "content": input,
+                    },
+                ],
+                "text": {
+                    "format": {
+                        "type": "json_schema",
+                        "name": output_schema_name,
+                        "schema": output_schema,
+                        "strict": True,
+                    }
+                },
+            },
             timeout=120,
         )
-        if not res.ok:
-            print(f"Error response body: {res.text}")
-        res.raise_for_status()
-        res = res.json()
-        res_text_blocks = [
-            block.get("text")
-            for block in res.get("content")
-            if block.get("type") == "text"
-        ]
-        res_text = "\n".join(res_text_blocks)
-        return res_text
+
+        try:
+            response.raise_for_status()
+        except requests.HTTPError as exc:
+            try:
+                error_body = response.json()
+            except Exception:
+                error_body = response.text
+            raise RuntimeError(f"OpenAI API error: {error_body}") from exc
+
+        data = response.json()
+
+        output_text = data.get("output_text")
+
+        if not output_text:
+            chunks = []
+            for item in data.get("output", []):
+                if item.get("type") != "message":
+                    continue
+                for part in item.get("content", []):
+                    if part.get("type") == "output_text":
+                        text_piece = part.get("text")
+                        if text_piece:
+                            chunks.append(text_piece)
+            output_text = "".join(chunks).strip()
+
+        if not output_text:
+            raise RuntimeError(
+                f"no output_text found in OpenAI response: {json.dumps(data)}"
+            )
+
+        try:
+            structured_output = json.loads(output_text)
+        except Exception as exc:
+            raise RuntimeError(
+                f"model output was not valid JSON: {output_text}"
+            ) from exc
+
+        return structured_output
+
+    # If you want to look something up on the Public Internet, this should be your first stop:
+    def gemini_web_search(self, input: str) -> str:
+        model_id = "gemini-3-pro-preview"
+
+        api_key = os.environ.get("GEMINI_API_KEY")
+        assert api_key, "GEMINI_API_KEY is not set"
+
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_id}:generateContent"
+
+        response = requests.post(
+            url,
+            headers={
+                "Content-Type": "application/json",
+                "x-goog-api-key": api_key,
+            },
+            json={
+                "contents": [
+                    {
+                        "role": "user",
+                        "parts": [
+                            {
+                                "text": input,
+                            },
+                        ],
+                    },
+                ],
+                "generationConfig": {
+                    "thinkingConfig": {
+                        "thinkingLevel": "HIGH",
+                        "includeThoughts": True,
+                    },
+                },
+                "tools": [
+                    {
+                        "googleSearch": {},
+                    },
+                ],
+            },
+            timeout=120,
+        )
+
+        try:
+            response.raise_for_status()
+        except requests.HTTPError as exc:
+            try:
+                error_body = response.json()
+            except Exception:
+                error_body = response.text
+            raise RuntimeError(f"Gemini API error: {error_body}") from exc
+
+        result = response.json()
+
+        chunks = []
+        for item in result["candidates"][0]["content"]["parts"]:
+            if item.get("text") is not None and item.get("thought") is not True:
+                chunks.append(item.get("text"))
+        output_text = "".join(chunks).strip()
+
+        def resolve_url(url: str) -> str:
+            try:
+                response = requests.head(url, allow_redirects=True, timeout=5)
+                return response.url
+            except Exception as exc:
+                print(f"resolve_url failed: {url} - {exc}")
+                return url
+
+        source_urls = []
+        for item in result["candidates"][0]["groundingMetadata"]["groundingChunks"]:
+            web = item.get("web")
+            if isinstance(web, dict):
+                url = web.get("uri")
+                if url:
+                    source_urls.append(resolve_url(url))
+
+        if source_urls:
+            numbered_sources = [f"{i + 1}. {url}" for i, url in enumerate(source_urls)]
+            return output_text + "\n\n" + "Sources:\n" + "\n".join(numbered_sources)
+        return output_text
 
     def load_local_lib(
         self,
