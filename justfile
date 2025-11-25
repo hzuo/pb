@@ -12,24 +12,27 @@ bot:
   #!/usr/bin/env bash
   uv run --env-file=.env personalbot.py -m openai
 
-bot2:
+bot-sonnet:
   #!/usr/bin/env bash
   uv run --env-file=.env personalbot.py -m sonnet
 
-bot3:
+bot-haiku:
   #!/usr/bin/env bash
   uv run --env-file=.env personalbot.py -m haiku
 
-bot4:
+bot-opus:
+  #!/usr/bin/env bash
+  uv run --env-file=.env personalbot.py -m opus
+
+bot-gemini:
   #!/usr/bin/env bash
   uv run --env-file=.env personalbot.py -m gemini
 
 alias b := bot
-alias b1 := bot
-alias b2 := bot2
-alias b3 := bot3
-alias b4 := bot4
-alias agent := bot
+alias bs := bot-sonnet
+alias bh := bot-haiku
+alias bo := bot-opus
+alias bg := bot-gemini
 
 tutorial:
   just run nbc "platform/notebooks/ai-tutorial.py"

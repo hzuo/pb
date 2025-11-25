@@ -2012,10 +2012,11 @@ def get_model_interface():
     parser.add_argument(
         "-m",
         "--model",
-        choices=["openai", "anthropic", "sonnet", "haiku", "gemini"],
+        choices=["openai", "anthropic", "sonnet", "haiku", "opus", "gemini"],
         default="openai",
     )
     args = parser.parse_args()
+    global anthropic_model
     if args.model == "openai":
         api_key = os.environ.get("OPENAI_API_KEY")
         assert api_key, "OPENAI_API_KEY is not set"
@@ -2040,10 +2041,18 @@ def get_model_interface():
             "run_turn": anthropic_run_turn,
         }
     elif args.model == "haiku":
-        global anthropic_model
         anthropic_model = "claude-haiku-4-5-20251001"
         return {
             "model_type": "anthropic-haiku",
+            "session_namespace": "personalbot02",
+            "validate_history": anthropic_validate_history,
+            "append_user_message": anthropic_append_user_message,
+            "run_turn": anthropic_run_turn,
+        }
+    elif args.model == "opus":
+        anthropic_model = "claude-opus-4-5-20251101"
+        return {
+            "model_type": "anthropic-opus",
             "session_namespace": "personalbot02",
             "validate_history": anthropic_validate_history,
             "append_user_message": anthropic_append_user_message,
