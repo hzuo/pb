@@ -488,7 +488,7 @@ class Helpers:
                     }
                 },
             },
-            timeout=120,
+            timeout=360,
         )
 
         try:
@@ -568,7 +568,7 @@ class Helpers:
                     },
                 ],
             },
-            timeout=120,
+            timeout=360,
         )
 
         try:
@@ -1678,7 +1678,7 @@ def gemini_call(history: list) -> dict:
             "Content-Type": "application/json",
             "x-goog-api-key": api_key,
         },
-        timeout=120,
+        timeout=360,
         json={
             "generationConfig": {
                 "thinkingConfig": {
