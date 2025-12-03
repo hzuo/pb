@@ -92,3 +92,12 @@ alias st := smoke-test
 
 healthfit-download:
   uv run --env-file=.env "scripts/25-11-16-sun-healthfit-download.py"
+
+mf1:
+  uv run --env-file=.env "scripts/25-12-02-tue-stonybrook-notes-01-download.py"
+
+mf2:
+  uv run --env-file=.env "scripts/25-12-02-tue-stonybrook-notes-02-convert.py"
+
+mf3:
+  uv run --env-file=.env "scripts/25-12-02-tue-stonybrook-notes-03-upload.py"

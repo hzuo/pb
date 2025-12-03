@@ -34,7 +34,7 @@ GIT_ROOT = next(p for p in Path(__file__).resolve().parents if (p / ".git").exis
 WORKSPACE = (GIT_ROOT / "_scratch" / "mf").resolve()
 CDP_PORT = 9315
 BASE_URL = "https://myhealthelife.stonybrookmedicine.edu/pages/health_record/open_notes"
-TSV_FILENAME = "notes_metadata.tsv"
+TSV_FILENAME = "__index__.tsv"
 PDF_BASE_URL = "https://patientportal.myhealthelife.stonybrookmedicine.edu"
 BATCH_SIZE = 50
 
