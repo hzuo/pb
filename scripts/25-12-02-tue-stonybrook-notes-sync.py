@@ -30,11 +30,7 @@ from playwright.sync_api import sync_playwright
 # Configuration (edit these as needed)
 # --------------------------------------------------------------------
 
-GIT_ROOT = next(
-    p
-    for p in [Path(__file__).resolve()] + list(Path(__file__).resolve().parents)
-    if (p / ".git").exists()
-)
+GIT_ROOT = next(p for p in Path(__file__).resolve().parents if (p / ".git").exists())
 WORKSPACE = (GIT_ROOT / "_scratch" / "mf").resolve()
 CDP_PORT = 9315
 BASE_URL = "https://myhealthelife.stonybrookmedicine.edu/pages/health_record/open_notes"
