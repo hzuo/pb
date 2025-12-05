@@ -6,20 +6,20 @@
 
 ## What Gemini 3 Pro brings to video understanding
 
-Google dropped the ".0" naming convention with this generation, calling it simply "Gemini 3 Pro." The model processes video natively—not through frame extraction—enabling true temporal reasoning across the content. Three capabilities stand out for video developers:
+Google dropped the ".0" naming convention with this generation, calling it simply "Gemini 3 Pro." The model accepts raw video input and handles frame extraction internally using a variable-sequence video tokenizer (replacing Pan & Scan from 2.x), enabling true temporal reasoning across the content. Three capabilities stand out for video developers:
 
 **High-frame-rate understanding** captures rapid action that previous models missed. Google specifically designed this for fast-moving scenes where critical moments occur between standard 1 FPS sampling intervals.
 
-**Long-context video recall** enables the model to pinpoint specific details and synthesize narratives across hours of footage. With the **1 million token context window** (2M available on some configurations), developers can process up to 2 hours of video at default resolution or 6 hours at low resolution.
+**Long-context video recall** enables the model to pinpoint specific details and synthesize narratives across extended footage. With the **1 million token context window** (1M input / 64k output), developers can process up to **~45 minutes of video with audio** or **~1 hour without audio** per request.
 
 **Variable sequence length tokenization** replaces the "Pan and Scan" method from previous models, improving both quality and latency simultaneously. A new `media_resolution` parameter gives granular control over the quality-cost tradeoff.
 
-| Resolution Setting | Tokens/Frame | Video Duration (1M context) |
-| ------------------ | ------------ | --------------------------- |
-| `high`             | 147          | ~55 minutes                 |
-| `medium_high`      | 105          | ~80 minutes                 |
-| `medium` (default) | 70           | ~2 hours                    |
-| `low`              | 66           | ~3 hours                    |
+| Resolution Setting             | Tokens/Frame | Notes                     |
+| ------------------------------ | ------------ | ------------------------- |
+| `MEDIA_RESOLUTION_HIGH`        | 280          | Best quality, most tokens |
+| `MEDIA_RESOLUTION_MEDIUM`      | 70           | Balanced                  |
+| `MEDIA_RESOLUTION_LOW`         | 70           | Same as medium for 3 Pro  |
+| `MEDIA_RESOLUTION_UNSPECIFIED` | 70           | Default                   |
 
 ---
 
@@ -60,9 +60,9 @@ curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro:gener
     "contents": [{
       "parts": [
         {
-          "file_data": {
-            "mime_type": "video/mp4",
-            "file_uri": "https://generativelanguage.googleapis.com/v1beta/files/abc123xyz"
+          "fileData": {
+            "mimeType": "video/mp4",
+            "fileUri": "https://generativelanguage.googleapis.com/v1beta/files/abc123xyz"
           }
         },
         {"text": "Summarize the key events in this video."}
@@ -80,8 +80,8 @@ curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro:gener
     "contents": [{
       "parts": [
         {
-          "inline_data": {
-            "mime_type": "video/mp4",
+          "inlineData": {
+            "mimeType": "video/mp4",
             "data": "'$(base64 -w0 video.mp4)'"
           }
         },
@@ -106,9 +106,9 @@ curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro:gener
       "role": "user",
       "parts": [
         {
-          "file_data": {
-            "mime_type": "video/mp4",
-            "file_uri": "https://generativelanguage.googleapis.com/v1beta/files/video123"
+          "fileData": {
+            "mimeType": "video/mp4",
+            "fileUri": "https://generativelanguage.googleapis.com/v1beta/files/video123"
           },
           "videoMetadata": {
             "startOffset": {"seconds": 60, "nanos": 0},
@@ -117,9 +117,9 @@ curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro:gener
           }
         },
         {
-          "file_data": {
-            "mime_type": "video/mp4",
-            "file_uri": "https://generativelanguage.googleapis.com/v1beta/files/video456"
+          "fileData": {
+            "mimeType": "video/mp4",
+            "fileUri": "https://generativelanguage.googleapis.com/v1beta/files/video456"
           }
         },
         {"text": "Compare the events in both videos. Provide detailed timestamps for key moments."}
@@ -205,14 +205,14 @@ curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro:gener
 
 ### Parameter reference for video understanding
 
-| Parameter                   | Purpose                  | Values                                 |
-| --------------------------- | ------------------------ | -------------------------------------- |
-| `videoMetadata.startOffset` | Clip video start time    | `{"seconds": N}` or `"Ns"`             |
-| `videoMetadata.endOffset`   | Clip video end time      | `{"seconds": N}` or `"Ns"`             |
-| `videoMetadata.fps`         | Frame sampling rate      | Float (default: 1.0)                   |
-| `mediaResolution`           | Quality/token tradeoff   | `LOW`, `MEDIUM`, `MEDIUM_HIGH`, `HIGH` |
-| `responseMimeType`          | Output format            | `text/plain`, `application/json`       |
-| `responseSchema`            | Structured output schema | JSON Schema object                     |
+| Parameter                   | Purpose                  | Values                                                                     |
+| --------------------------- | ------------------------ | -------------------------------------------------------------------------- |
+| `videoMetadata.startOffset` | Clip video start time    | `{"seconds": N}` or `"Ns"`                                                 |
+| `videoMetadata.endOffset`   | Clip video end time      | `{"seconds": N}` or `"Ns"`                                                 |
+| `videoMetadata.fps`         | Frame sampling rate      | Float (default: 1.0)                                                       |
+| `mediaResolution`           | Quality/token tradeoff   | `MEDIA_RESOLUTION_LOW`, `MEDIA_RESOLUTION_MEDIUM`, `MEDIA_RESOLUTION_HIGH` |
+| `responseMimeType`          | Output format            | `text/plain`, `application/json`                                           |
+| `responseSchema`            | Structured output schema | JSON Schema object                                                         |
 
 ---
 
@@ -264,15 +264,15 @@ The evolution from 1.5 Pro through 3 Pro shows consistent improvements in video 
 
 ### Key technical differences
 
-| Feature                | 1.5 Pro | 2.0 Flash | 2.5 Pro  | 3 Pro   |
-| ---------------------- | ------- | --------- | -------- | ------- |
-| Videos per request     | 1       | 1         | **10**   | 10      |
-| YouTube URLs           | No      | No        | **Yes**  | Yes     |
-| Video clipping         | No      | No        | **Yes**  | Yes     |
-| Custom FPS             | No      | No        | **Yes**  | Yes     |
-| Real-time streaming    | No      | **Yes**   | Yes      | Yes     |
-| Max duration (low res) | 2 hr    | 2 hr      | **6 hr** | 6 hr    |
-| High-frame-rate mode   | No      | No        | No       | **Yes** |
+| Feature                 | 1.5 Pro | 2.0 Flash | 2.5 Pro  | 3 Pro   |
+| ----------------------- | ------- | --------- | -------- | ------- |
+| Videos per request      | 1       | 1         | **10**   | 10      |
+| YouTube URLs            | No      | No        | **Yes**  | Yes     |
+| Video clipping          | No      | No        | **Yes**  | Yes     |
+| Custom FPS              | No      | No        | **Yes**  | Yes     |
+| Real-time streaming     | No      | **Yes**   | Yes      | Yes     |
+| Max duration (w/ audio) | 2 hr    | 2 hr      | **6 hr** | ~45 min |
+| High-frame-rate mode    | No      | No        | No       | **Yes** |
 
 ---
 
@@ -280,7 +280,7 @@ The evolution from 1.5 Pro through 3 Pro shows consistent improvements in video 
 
 Gemini 3 Pro accepts these video formats: `video/mp4`, `video/mpeg`, `video/mov`, `video/avi`, `video/x-flv`, `video/mpg`, `video/webm`, `video/wmv`, `video/3gpp`.
 
-**Token calculation**: At default resolution, video consumes approximately **300 tokens per second** (258 visual tokens per frame at 1 FPS plus 32 tokens per second for audio). Low resolution reduces this to **~100 tokens per second** (66 tokens per frame).
+**Token calculation (Gemini 3 Pro)**: At default resolution, video consumes **70 tokens per frame** (sampled at 1 FPS by default). At `MEDIA_RESOLUTION_HIGH`, this increases to **280 tokens per frame**. Audio is tokenized separately. The 300/100 tokens-per-second heuristic applies to Gemini 2.x models, not 3 Pro.
 
 **File limits**: Maximum **2GB per file**, **20GB total storage** per project. Uploaded files expire after **48 hours**. For videos over 20MB or longer than 1 minute, use the File API rather than inline base64 encoding.
 
@@ -429,12 +429,12 @@ GENERATION_CONFIG: Dict[str, Any] = {
     "stopSequences": [],         # e.g. ["</END>"]
 
     # Output format (JSON mode) – strongly encourages well-formed JSON.
-    "response_mime_type": "application/json",
+    "responseMimeType": "application/json",
 
     # Media handling – global default for this request.
     # Options: MEDIA_RESOLUTION_UNSPECIFIED / MEDIA_RESOLUTION_LOW /
     #          MEDIA_RESOLUTION_MEDIUM / MEDIA_RESOLUTION_HIGH
-    "media_resolution": "MEDIA_RESOLUTION_UNSPECIFIED",
+    "mediaResolution": "MEDIA_RESOLUTION_UNSPECIFIED",
 
     # Optional penalties & determinism:
     # "presencePenalty": 0.0,
@@ -850,7 +850,7 @@ def analyze_chunk_with_gemini(
     prompt_text = build_chunk_prompt(chunk, total_chunks, global_summary)
 
     payload: Dict[str, Any] = {
-        "system_instruction": {
+        "systemInstruction": {
             "role": "system",
             "parts": [{"text": BASE_VIDEO_TASK_PROMPT}],
         },
@@ -859,9 +859,9 @@ def analyze_chunk_with_gemini(
                 "role": "user",
                 "parts": [
                     {
-                        "file_data": {
-                            "file_uri": file_uri,
-                            "mime_type": mime_type,
+                        "fileData": {
+                            "fileUri": file_uri,
+                            "mimeType": mime_type,
                         }
                     },
                     {"text": prompt_text},
@@ -932,7 +932,7 @@ def aggregate_chunks_with_gemini(
     config["maxOutputTokens"] = min(int(MODEL_MAX_OUTPUT_TOKENS / 2), 4096)
 
     payload: Dict[str, Any] = {
-        "system_instruction": {
+        "systemInstruction": {
             "role": "system",
             "parts": [{"text": BASE_VIDEO_TASK_PROMPT}],
         },
