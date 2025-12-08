@@ -1029,3 +1029,169 @@ From 12/8 Nutrition note:
   * Ostomy output ~**400 mL**/24 hr.
 
 ---
+
+## Appendix A – CT Chest with IV Contrast (12/8/2025)
+
+**Study:** CT CHEST WITH IV CONTRAST
+**Date/Time:** 12/8/2025 14:53 EST (Accession 12555699)
+**Ordering provider:** Dr. Zaid Iqbal
+**Clinical indication:**
+“Concern for bleeding vs abscess vs infiltration of TPN right axillary region proximal to tunneled catheter line” – i.e., evaluation of **right axillary/chest wall pain and suspected hematoma or line‑related complication**.
+
+### A.1 Technique and Comparison
+
+* Axial CT images from **thoracic inlet to adrenals**, with sagittal and coronal reformats.
+* IV contrast: **Omnipaque 350, 80 mL** (non‑ionic).
+* Radiation dose: CTDIvol mean 4.24 mGy; DLP 187.95 mGy·cm.
+* Technologist note: **patient unable to raise right arm above head** (consistent with her pain and limited ROM).
+* **Comparison study:** CT venogram chest with IV contrast from **12/6/2025**.
+
+---
+
+### A.2 Key Anatomic Findings (Structured by Region)
+
+#### 1. Devices
+
+* **Right IJ tunneled central venous catheter:**
+  * Tip is in the **mid SVC**, **unchanged** from prior.
+  * Proximal catheter **tunnels through subcutaneous fat in the anterior right chest wall** (course passes near the area of her current pain and the newly imaged collection).
+
+#### 2. Lungs and Airways
+
+* **Patchy airspace opacities** in the **anterior portions of both upper lobes**:
+  * Described on series 901, images 52–70.
+  * Radiologist: **“Correlate for pneumonia.”**
+* **Left apical pleural–parenchymal scarring** – unchanged, likely chronic.
+* **Linear opacities** in both lung bases – interpreted as **atelectasis or scarring**.
+* Central airways: **patent**.
+* No mention of mass or large consolidations beyond the described anterior upper lobe opacities.
+
+**Clinical implication:**
+Compared to prior CXRs (which showed no definite focal consolidation and only a trace right pleural effusion/atelectasis), CT now shows **bilateral anterior upper‑lobe patchy opacities** that could represent **infectious pneumonia** (bacterial, viral, or aspiration) or other inflammatory processes. The report explicitly recommends clinical correlation for **pneumonia**.
+
+#### 3. Pleura and Pleural Space
+
+* **No pleural effusion.**
+* No pleural mass.
+* No pneumothorax.
+
+**Note:** This contrasts slightly with the 12/8 portable CXR, which described a **trace right pleural effusion** with adjacent hazy opacity. CT (more sensitive for small fluid collections) now reports **no effusion**, suggesting any prior effusion was **minimal and/or resolved** or below detection threshold at the time of CT.
+
+#### 4. Mediastinum, Lymph Nodes, Neck Base
+
+* **No significant intrathoracic lymphadenopathy.**
+* No pathologically enlarged axillary or other nodes.
+* Neck base: no focal lesion; **thyroid normal**.
+
+#### 5. Cardiovascular Structures
+
+* **Heart size and pulmonary vascularity**: within normal limits.
+* **Mild coronary artery calcifications** (consistent with known non‑obstructive CAD).
+* **Aorta and main pulmonary artery**: normal caliber.
+* No pericardial effusion described.
+
+#### 6. Upper Abdomen (Partially Imaged)
+
+* **Biliary tree:**
+  * **CBD stent** is in place (as expected from prior ERCP on 11/19).
+  * **Pneumobilia** is again demonstrated (air in the biliary tree—expected in the setting of prior sphincterotomy/stent).
+* **Gallbladder:**
+  * High‑density material in the gallbladder on the last image:
+    * Not fully characterized here but described as likely **sludge or calculus** (consistent with known cholelithiasis).
+* **IVC filter:**
+  * An IVC filter is noted with **legs abutting the portal vein**.
+    * This is consistent with prior comments that the **suprarenal IVC filter’s struts extend beyond the IVC**.
+    * Here, the report emphasizes that the filter legs **abut the portal vein** in the upper abdomen.
+* **Abdominal wound/fistula region:**
+  * A **partially imaged abdominal wound** is seen on the last image; not fully characterized on this chest‑focused study.
+
+**Clinical implication:**
+
+* The CT confirms:
+  * **CBD stent remains in situ**.
+  * **Cholelithiasis/sludge** persists.
+  * **Pneumobilia** is expected post‑ERCP and biliary instrumentation.
+* The IVC filter description adds an important nuance: **filter legs now documented as abutting the portal vein**, underscoring their extra‑caval extension and close relationship to major abdominal vasculature. This supports prior concerns raised on CT venogram (tilted filter with struts beyond IVC) and underlies Vascular Surgery’s and Radiology’s recommendations to consider IR consultation.
+
+#### 7. Musculoskeletal and Chest Wall – Critical Finding
+
+* **Right subpectoral fluid collection**:
+
+  * Location:
+    * Deep to the right pectoral region (“subpectoral”), on the side of her **tunneled catheter** and **axillary/chest wall pain**.
+  * Size:
+    * **7.7 x 7.6 x 5.1 cm**.
+  * Internal characteristics:
+    * **Layering hyperdensity**, indicating dependent high‑density material within the collection.
+    * Radiologist: “compatible with **hematoma**.”
+  * Vascular relationships:
+    * **Right subclavian artery and vein appear patent.**
+  * Importantly:
+    * **No evidence of active contrast extravasation** is seen.
+
+* Impression line (verbatim):
+
+  > “Right subpectoral fluid collection with layering dependent hyperdensity compatible with hematoma. No evidence of active extravasation.”
+
+* Notification:
+
+  * Labeled a **critical result**.
+  * Dr. Jennifer Martino notified Dr. Zaid Iqbal on **12/8/2025 at 3:41 PM**; read‑back confirmed.
+
+**Clinical implication:**
+
+* This confirms that the clinical suspicion of a **right chest wall/axillary hematoma** is correct.
+* Key points:
+  * It is **large** (roughly 7–8 cm).
+  * It appears to be a **contained subpectoral hematoma** rather than a small superficial bruise.
+  * **No CT evidence of active arterial extravasation** at the time of imaging – suggesting no high‑flow ongoing arterial bleed visible on this scan.
+  * **Right subclavian vessels are patent**, and there is no obvious arterial occlusion or pseudoaneurysm described.
+* The hematoma’s location along the course of the **tunneled catheter** plus the clinical context (therapeutic heparin, thrombocytopenia, TPN infusion, acute chest wall pain) is highly consistent with a **catheter‑track–related or chest wall soft‑tissue bleed** that has now organized into a sizable hematoma.
+
+---
+
+### A.3 Integrated Interpretation in Context of Current Status
+
+1. **Right chest wall hematoma (primary reason for this CT):**
+
+   * CT confirms a **large right subpectoral hematoma** deep to the right pectoral muscles, without CT evidence of active contrast extravasation.
+   * This fully supports:
+     * The 12/8 bedside concern for bleeding near the tunneled catheter.
+     * The decision documented in the 12/8 General Medicine note to **suspend the heparin drip and hold TPN** while imaging was obtained.
+   * The absence of active extravasation on CT does **not** rule out slow venous or low‑flow oozing, but there is **no radiologic evidence of a major ongoing high‑flow arterial bleed** at scan time.
+
+2. **Central line position:**
+
+   * The **right IJ tunneled Hickman** remains in **good SVC position**.
+   * The subcutaneous tunneling path runs near the region of the hematoma, but the catheter tip itself is unchanged in the mid SVC.
+
+3. **Pulmonary findings:**
+
+   * Compared with prior plain films (which showed no overt consolidation and only a trace effusion), CT now shows:
+     * **Patchy anterior upper‑lobe opacities bilaterally**, with a specific suggestion to **correlate for pneumonia**.
+     * Basilar linear opacities, likely **atelectasis or scarring**.
+   * In the context of known **COVID‑19 positivity** and multiple antibiotics, these opacities could reflect:
+     * Superimposed **bacterial pneumonia**,
+     * Viral pneumonitis,
+     * Aspiration or other inflammatory processes.
+   * There is **no pleural effusion or pneumothorax**.
+
+4. **Biliary system and IVC filter:**
+
+   * The study confirms:
+     * **CBD stent still in place**, with **pneumobilia** and **gallbladder sludge/stones**, consistent with her ERCP history and acute cholecystitis.
+     * **IVC filter** with legs that **abut the portal vein**, in keeping with previous descriptions of a tilted filter with struts extending beyond the IVC.
+   * This reinforces:
+     * The chronic, complex nature of her filter position.
+     * The rationale for **Vascular Surgery and Radiology recommending IR evaluation** for potential filter retrieval or management, if clinically feasible.
+
+---
+
+### A.4 Bottom Line from the 12/8 CT Chest
+
+* **Confirms a large right subpectoral hematoma** adjacent to the tunneled catheter track, without CT evidence of active arterial extravasation.
+* **Supports holding heparin and TPN** while this hematoma is evaluated and managed.
+* **Shows patchy anterior upper‑lobe opacities** compatible with **pneumonia**, warranting correlation with symptoms, labs, and current antimicrobial coverage.
+* **Re‑demonstrates**:
+  * A **CBD stent**, pneumobilia, and gallbladder sludge/stones.
+  * A **tilted suprarenal IVC filter** with legs abutting the **portal vein**, underscoring the previously recognized filter malposition/strut extension.
