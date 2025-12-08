@@ -1,7 +1,3 @@
-Status Report: Monday 12/08/2025 3:38PM ET
-
----
-
 # Patient Summary – Maura Walsh
 
 **DOB:** 1/16/1960 **Age:** 65 **Sex:** Female
