@@ -542,7 +542,7 @@ On stroke team arrival:
   * **Transthoracic echo (TTE) with bubble**:
 
     * Later reported no PFO (no bubbles in left heart).
-  * Subsequent **TEE** (see above).
+  * Subsequent **TEE** (see §9.1 TEE – 12/5/2025 below).
   * Repeat CT head as needed if heparin fully therapeutic and/or clinical changes, to monitor for hemorrhagic transformation.
   * Ongoing search for infectious embolic sources (blood cultures, valve imaging).
 
