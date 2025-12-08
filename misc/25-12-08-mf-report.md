@@ -181,6 +181,8 @@ Shortly after:
 * TPN via new **right IJ Hickman** continued.
 * Close outpatient ID and PCP follow‑up planned.
 
+In practice, she developed severe nausea, vomiting, and high‑output ostomy on this high‑dose oral regimen and was readmitted **11/16/2025** unable to continue it. During the subsequent admission, Infectious Disease restarted **IV cefiderocol + IV minocycline** and defined a new **14‑day inpatient course for Stenotrophomonas from 11/16 through 11/29/2025**.
+
 ---
 
 ## 3. Current Admission (11/16/2025 – Present)
@@ -281,6 +283,8 @@ Shortly after:
 * **Balloon sweep** of CBD stones/debris.
 * **CBD stent** placed.
 
+GI notes specify a plan for **repeat ERCP in 2–3 months** to remove the plastic CBD stent. General Surgery recommends **deferring cholecystectomy** given her extensive prior abdominal surgery, adhesions, and high operative risk; acute cholecystitis is being managed non‑operatively with antibiotics.
+
 ### 4.2 Liver Enzymes and DILI Evaluation
 
 After ERCP and ongoing antibiotics, she developed **marked transaminitis**:
@@ -308,10 +312,10 @@ After ERCP and ongoing antibiotics, she developed **marked transaminitis**:
 **GI assessment (12/2):**
 
 * Noted LFT pattern now **primarily hepatocellular** (R‑factor ~8).
-* ALP and bilirubin largely normalized or trending down.
+* ALP and bilirubin largely normalized or trending down, which they felt argued against an ongoing purely cholestatic/obstructive process.
 * Concluded likely **drug‑induced liver injury (DILI)**, with:
 
-  * **Minocycline** and possibly **levofloxacin** as primary culprits.
+  * **Minocycline** and possibly **levofloxacin** as primary culprits; both are documented “Class A” hepatotoxins in LiverTox.
   * COVID‑19 infection and acute cholecystitis possible contributors.
 * Autoimmune and viral serologies largely unremarkable.
 * Ceruloplasmin low but not thought to be driving the acute picture.
@@ -386,7 +390,7 @@ Because of:
 * Chronic IVC filter thrombus,
 * High thrombotic risk profile,
 
-she was started on **therapeutic heparin infusion**:
+she was started on **therapeutic heparin infusion** (initiated 11/27/2025 after DVTs were found on 11/26 duplex):
 
 * Goal: keep PTT in therapeutic range (60–80 seconds at times).
 * Hematology explicitly endorsed **full anticoagulation despite platelets <50 K**, given very high clot risk.
@@ -394,7 +398,15 @@ she was started on **therapeutic heparin infusion**:
 
   * Ongoing bleeding from ECF/ileostomy.
   * Platelets in the 30–50K range.
-* Heparin infusions were sometimes held around bleeding episodes, then restarted.
+
+* Major interruptions included:
+
+  * A hold on **12/2** after significant bleeding from an enterocutaneous fistula (cauterized by CRS with silver nitrate), with platelets in the low 40Ks.
+  * A subsequent hold on **12/8** for a suspected right chest wall/axillary hematoma near the tunneled catheter.
+
+* She received at least one **platelet transfusion** (1 unit on 12/4–12/5, coinciding with a rise from the 40Ks into the mid‑70Ks), and **RBC transfusions** when Hgb fell to 6.3–6.9 g/dL.
+
+Heparin was otherwise resumed and continued as tolerated between these bleeding events.
 
 ---
 
@@ -491,16 +503,20 @@ On stroke team arrival:
 ### 7.4 Neurology Assessment and Plan
 
 * Infarcts characterized as **small–moderate cortical strokes**, likely **embolic**.
-* Leading hypothesis:
+* Neurology considers these **embolic strokes in the setting of extensive venous and catheter‑related thrombosis**:
 
-  * **Paradoxical embolism or other embolic source**, given:
+  * Early in the work‑up they suspected a **paradoxical embolus** arising from venous thrombi/IVC filter (before bubble/TEE were completed).
+  * After imaging:
 
-    * **Suprarenal IVC filter with thrombus**.
-    * New DVTs (subclavian and soleal).
-  * Patient had been on **therapeutic heparin drip since 11/27**, so strokes occurred **despite anticoagulation**.
+    * **TTE with bubble and TEE** showed no PFO or intracardiac right‑to‑left shunt.
+    * **TEE (12/5)** revealed a **0.7 x 0.8 cm mobile echodensity adherent to the SVC catheter tip**, consistent with a catheter‑associated thrombus vs vegetation.
+
+  * Patient had been on a **therapeutic heparin drip since 11/27**, so the strokes occurred **despite anticoagulation**.
+
 * Less likely:
 
   * Atherosclerotic stroke (normal CTA/MRA, low LDL, minimal plaque).
+
 * Not considered candidate for:
 
   * Thrombolysis (tPA/TNK):
@@ -526,11 +542,11 @@ On stroke team arrival:
   * **Transthoracic echo (TTE) with bubble**:
 
     * Later reported no PFO (no bubbles in left heart).
-  * Subsequent **TEE** (see below).
+  * Subsequent **TEE** (see above).
   * Repeat CT head as needed if heparin fully therapeutic and/or clinical changes, to monitor for hemorrhagic transformation.
   * Ongoing search for infectious embolic sources (blood cultures, valve imaging).
 
-By 12/5 Neurology progress note (via your summary):
+By 12/5 Neurology progress note:
 
 * Exam markedly improved:
 
