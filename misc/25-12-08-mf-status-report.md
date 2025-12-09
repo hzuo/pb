@@ -1195,3 +1195,362 @@ Compared to prior CXRs (which showed no definite focal consolidation and only a 
 * **Re‑demonstrates**:
   * A **CBD stent**, pneumobilia, and gallbladder sludge/stones.
   * A **tilted suprarenal IVC filter** with legs abutting the **portal vein**, underscoring the previously recognized filter malposition/strut extension.
+
+---
+
+## Appendix B – 12/9/2025 Inpatient Updates (Gen Med, ID, Nutrition)
+
+This appendix synthesizes the **12/9/2025 General Medicine, Infectious Disease, and Nutrition notes**. It is focused on what they add or clarify relative to the main body of the report (which already covers history, prior admissions, imaging through 12/8, and the 12/8 CT chest in Appendix A).
+
+---
+
+### B.1 Day‑of‑Care Overview (12/9)
+
+- **Clinical impression on rounds (Gen Med & ID):**
+  - Patient is **afebrile, hemodynamically stable**, in **no acute distress**, and described as **non‑toxic**.
+  - She is **ambulating on the unit**, feels **“better”**, and **denies pain or new symptoms** at the time of ID exam.
+  - ROS is broadly negative (no chest pain, SOB, new GI symptoms, urinary symptoms, neuro complaints), aside from expected ostomy/fistula findings.
+- **Neurologic status:**
+  - Still **alert and oriented x3**.
+  - No new focal deficits documented; neurologic ROS is negative.
+  - Functional status: uses the unit, moving about, participating in care; consistent with ongoing recovery from prior small cortical strokes.
+
+Overall, compared with the 12/8 snapshot, the 12/9 notes portray a patient who is **clinically stable to slightly improved**, despite ongoing complex issues with bleeding risk and thrombosis.
+
+---
+
+### B.2 Right Chest Wall Hematoma & Hemoglobin Course
+
+The 12/8 CT chest (detailed in Appendix A) established a **large right subpectoral hematoma** along the tunneled catheter tract, with **no active contrast extravasation**. The 12/9 notes add:
+
+- **Symptoms and exam:**
+  - Right axillary/chest wall region:
+    - **Less pain**, improved range of motion in the right upper extremity.
+    - Gen Med exam: **“Improvement of the patient’s right axillary region”**; skin warm and dry.
+  - Pulmonary and cardiac exams remain benign (clear lungs, regular heart rate/rhythm).
+
+- **Hemoglobin trajectory and attribution of blood loss:**
+  - 12/8 21:51 – Hgb **7.5 g/dL**, Hct 22.4%, Plt 88K.
+  - 12/9 04:21 – Hgb **6.9 g/dL (critical)**, Hct 20.8%; prompted **1 unit PRBC** overnight.
+  - Later on 12/9 – Hgb improves (documented values range from **7.5–9.4 g/dL** in different draws and summary tables; ID notes 7.9 g/dL, GM lab panel shows 9.4 g/dL at ~06:00).
+  - Gen Med explicitly attributes this drop as:
+    > “drop in hemoglobin/hematocrit, unexpected secondary to **spontaneous chest wall hematoma**”
+  - Importantly:
+    - **No evidence of active bleeding from the ostomy bag** on 12/9 (ostomy output described as brown stool by Gen Med; ID notes ostomy with green output and only blood staining around a left‑sided fistula, not heavy bleeding).
+
+- **Interpretation:**
+  - The hematoma is now treated as the **primary source of recent blood loss** (including the new nadir of Hgb 6.9 on 12/9).
+  - Clinically, the hematoma appears **contained and improving symptomatically**; there is no imaging evidence of brisk arterial bleeding and no expansion suggested by exam.
+
+---
+
+### B.3 Anticoagulation & IVC Filter Plan
+
+The major new operational decision on 12/9 is how to balance **acute VTE/stroke risk** against this hematoma.
+
+- **Current anticoagulation status:**
+  - **Heparin drip (therapeutic)** – **suspended**:
+    - Order shows a continuous heparin infusion (25,000 Units in 250 mL NS) at **600 Units/hr**, now marked **“Suspended”**.
+    - aPTT on 12/9 is **26 sec** (normal), consistent with **no active heparin**.
+  - **Enoxaparin (Lovenox) prophylaxis** 40 mg SC daily – also **suspended**.
+  - **Mechanical VTE prophylaxis** in place:
+    - Bilateral calf **sequential compression devices (SCDs)** since 11/22.
+
+- **Planned timing and rationale:**
+  - Gen Med explicitly documents:
+    - Continue **pressure dressing** over the chest wall hematoma.
+    - Keep patient **off heparin drip for 48 hours**.
+    - **Plan to resume heparin gtt “tomorrow” after IVC filter retrieval**.
+  - In other words:
+    - Short, clearly defined window **off systemic anticoagulation** to stabilize the hematoma and allow for an **attempt at IVC filter retrieval**, after which **full‑dose heparin** is intended to resume.
+
+- **Thrombotic disease recap in these notes:**
+  - **Upper and lower extremity DVTs**:
+    - **Partial acute thrombus in the left mid subclavian vein**.
+    - **Acute thrombus in the left soleal vein** (calf DVT).
+  - **SVC catheter‑associated mass**:
+    - TEE (12/5) again cited as showing a **mobile echodensity on the tip of the SVC catheter**, likely **thrombus vs. vegetation**, with no valve involvement or left‑sided endocarditis.
+  - **Chronic suprarenal IVC filter**:
+    - CT venogram (12/6) reiterated:
+      - Filter is **tilted**, with multiple struts **extending beyond the IVC**.
+      - No **“sizable”** catheter‑tip thrombus; however, the filter’s position is abnormal.
+      - Reviewed with **IR**, who initially recommended **no intervention** and noted no large clot.
+    - The 12/9 plan upgrades this from “consider IR evaluation” to a **scheduled attempt at IVC filter retrieval**, which is now explicitly driving anticoagulation timing.
+
+- **Internal documentation inconsistency:**
+  - In the DVT problem section, a line still reads **“Plan – c/w Hep GTT”**, but this is contradicted by:
+    - The **suspended** heparin order,
+    - The **normal aPTT**,
+    - The explicit plan to keep heparin **off for 48 hours** and resume after filter retrieval.
+  - The operative reality is: **heparin is off**, and resumption is tied to the filter procedure.
+
+Net effect: as of 12/9, the team is **temporarily prioritizing hemorrhage control** and procedural planning over continuous anticoagulation, but with a clear intention to **re‑start therapeutic heparin** quickly once the IVC filter issue is addressed.
+
+---
+
+### B.4 Thrombocytopenia & Hematologic Status
+
+The 12/9 notes provide an updated snapshot of the recovery from severe drug‑associated thrombocytopenia:
+
+- **Platelet trend:**
+  - 12/8 06:00 – Plt **70 K/µL**.
+  - 12/8 21:51 – Plt **88 K/µL**.
+  - 12/9 04:21 – Plt **91 K/µL**.
+  - Later 12/9 (ID table) – Plt **98 K/µL**.
+- **Morphology:**
+  - Peripheral smear continues to show:
+    - **Giant platelets**.
+    - **Mild anisopoikilocytosis** (anisocytosis, poikilocytosis, burr cells, target cells, macrocytosis, polychromasia rated 1+).
+    - Occasional **nucleated RBCs** (1–2 per 100 WBC).
+- **Coagulation:**
+  - PT **~11 sec**, **INR 1.0**.
+  - aPTT **26 sec** off heparin (therapeutic range was previously 40–50+ sec while on drip).
+- **Hematology assessment (as reflected in Gen Med note):**
+  - **HIT is very unlikely**:
+    - She had **refused prophylactic enoxaparin** earlier.
+    - **PF4/HIT antibody** was negative.
+  - Thrombocytopenia deemed **multifactorial**, with **cefiderocol** a key suspect; platelets are now **steadily improving**.
+  - **LDH** is within normal limits.
+  - **Haptoglobin low**, interpreted as likely due to **frequent transfusions** rather than active hemolysis.
+  - Bilirubin on 12/6 was within normal limits.
+  - No laboratory or clinical evidence of **DIC** or **consumptive coagulopathy**.
+
+Net: Platelet counts have risen from the 30–40K nadir to **upper‑80s–90s**, moving toward a safer zone for both anticoagulation and invasive procedures.
+
+---
+
+### B.5 Infectious Disease Status & Antibiotic Strategy
+
+The 12/9 ID note consolidates prior infection history and makes **critical antibiotic changes**.
+
+#### B.5.1 Status of Prior Bacteremias and Endocarditis Workup
+
+- **Stenotrophomonas maltophilia bacteremia** (11/5):
+  - Origin: prior **LIJ Hickman** (removed 11/5).
+  - Treated with:
+    - IV **cefiderocol + minocycline**, then
+    - Oral **levofloxacin + minocycline**.
+  - **Total course completed by 11/29**.
+  - Subsequent **blood cultures on 11/16, 11/22, and 12/2 are all negative**.
+- **Staph hominis bacteremia** and other line infections:
+  - All previously described episodes are acknowledged again; none are active.
+- **TEE findings and IE concern:**
+  - TEE (12/5) reconfirmed:
+    - **No valvular vegetations** or left‑sided endocarditis.
+    - **No PFO or intracardiac shunt**.
+    - **Mobile echodensity on SVC catheter tip**, interpreted as **thrombus vs. catheter‑associated vegetation**.
+  - ID’s operational stance:
+    - With **serial negative blood cultures**, absence of valve involvement, and no systemic signs of sepsis, the **likelihood of active endocarditis is low**.
+    - The SVC lesion is treated primarily as a **thrombotic complication** in the context of extensive venous disease.
+
+#### B.5.2 Current Infectious Issues (as ID frames them)
+
+- **Acute embolic strokes** (left frontal, right parietal) – etiology unclear, but now more strongly framed as **embolic with a thrombotic/catheter component** rather than frank infective endocarditis.
+- **SVC thrombus and LE DVT** – as above, central to risk/benefit decisions on anticoagulation.
+- **Choledocholithiasis with cholecystitis**:
+  - s/p **ERCP with CBD stent placement and stone sweep** on 11/19.
+  - **HIDA positive** for cholecystitis on 11/30.
+  - Managed medically; no interval procedures since status report.
+- **Anemia and thrombocytopenia** – ongoing but improving.
+- **Transaminitis** – **down‑trending**, consistent with DILI recovery.
+- **COVID‑19**:
+  - Positive on **11/23** (ID note says 11/23; main report uses 11/22).
+  - Symptoms remain **very mild**; patient on **room air**, no hypoxia.
+  - No remdesivir or steroids.
+
+#### B.5.3 Antibiotic Changes on 12/9
+
+Prior to 12/9 (per main report and 12/8 notes), she was on:
+
+- **Cefepime** 2 g q8h IV.
+- **Daptomycin** 8 mg/kg IV daily.
+- **Metronidazole (Flagyl)** 500 mg IV q8h.
+- **Nystatin oral** for thrush prophylaxis.
+
+On 12/9, **ID makes a clear de‑escalation**:
+
+- **Continue:**
+  - **Cefepime 2 g IV q8h**:
+    - Chosen because she has **previously tolerated cefepime**.
+    - Provides **broad coverage**, including biliary and line‑related pathogens.
+- **Stop:**
+  - **Daptomycin.**
+  - **Metronidazole (Flagyl).**
+- **Maintain:**
+  - **Nystatin oral** for mucosal candidiasis prophylaxis/treatment.
+- **Monitor:**
+  - Follow up **blood cultures** (currently negative).
+  - Ongoing clinical status and labs (WBC ~10–13K, but stable).
+
+This is an important shift: from a **triple IV antibiotic regimen** back to **single‑agent cefepime**, reflecting confidence that:
+
+- Stenotrophomonas bacteremia is fully treated.
+- There is no ongoing bacteremia or endocarditis.
+- Biliary/sepsis control is now primarily directed at **post‑ERCP cholecystitis** and line‑related risks, covered by cefepime.
+
+---
+
+### B.6 Biliary Disease, Liver Injury, and COVID (12/9 Framing)
+
+No new biliary procedures were performed on 12/9, but the notes reaffirm and slightly reframe prior conclusions:
+
+- **Biliary disease:**
+  - **ERCP 11/19:** CBD stone sweep and **plastic stent placement** (CBD stent still in place on cross‑sectional imaging).
+  - **HIDA 11/30:** Nonvisualization of gallbladder at 1 and 4 hours → **suspicious for acute cholecystitis**.
+  - **General Surgery:** Continues to **defer cholecystectomy** given high surgical risk and complex abdomen; outpatient evaluation planned once stable.
+  - Clinically on 12/9:
+    - Abdomen soft, non‑tender, non‑distended on both Gen Med and ID exams.
+    - No new biliary‑specific complaints (no RUQ pain, no jaundice progression).
+
+- **Liver function / DILI:**
+  - LFTs cited are the **12/8 values**:
+    - AST **32 IU/L**.
+    - ALT **135 IU/L** (down from peak ~850).
+    - ALP **153 IU/L** (mildly elevated).
+    - Total bilirubin **0.7 mg/dL**, direct **0.4 mg/dL**.
+    - Albumin **2.4 g/dL**, total protein **4.7 g/dL**.
+  - Both Gen Med and ID summarize this as **“transaminitis down‑trending,” consistent with improving DILI** (minocycline ± other drugs), superimposed on COVID and cholecystitis.
+
+- **COVID‑19:**
+  - Remains **mild**:
+    - On **room air**, SpO₂ **98–99%**.
+    - No new infiltrates on plain films (12/7–12/8 CXRs show at most trace effusion/atelectasis).
+  - Management:
+    - **No remdesivir**, no steroids, given lack of hypoxia and hepatic considerations.
+
+No new imaging on 12/9 changes the biliary/COVID story; rather, the notes confirm the **improving LFT trend** and the decision to **continue conservative, antibiotic‑based management**.
+
+---
+
+### B.7 Neurologic/Stroke Status on 12/9
+
+The 12/9 General Medicine and ID notes do not introduce new stroke imaging, but they:
+
+- Re‑summarize:
+  - **MRI (12/1):** Acute infarcts in the **left precentral gyrus** (posterior frontal) and **right postcentral gyrus** (parietal), with no large vessel occlusion on CTA/MRA.
+  - **Serial CTs (12/2, 12/4):** Show evolving infarcts without hemorrhagic conversion.
+  - **TTE with bubble:** No right‑to‑left shunt (no bubble passage to left heart).
+  - **TEE (12/5):** No LA/LAA thrombus, no PFO, no valvular vegetations; SVC catheter tip mass as above.
+
+- Clinical state on 12/9:
+  - Neurologic exam by both services is normal enough that neurologic ROS is **explicitly negative** (no dizziness, confusion, headache, new weakness).
+  - She is **ambulating** in the unit and neurologically **stable**.
+
+Stroke management implicates anticoagulation strategy (see B.3): the team accepts a brief period without heparin due to the hematoma, with a plan to restart after IVC filter management.
+
+---
+
+### B.8 Nutrition, TPN, Fluids, and Weight
+
+The main report already summarized TPN composition; the 12/9 Nutrition note provides an explicit **status update and monitoring plan**.
+
+- **Diet orders:**
+  - **Unrestricted, regular diet**, thin liquids.
+  - **Ensure Clear** oral supplement **TID** since 11/18.
+  - RDs/CDNs empowered to adjust diet as needed.
+
+- **TPN & SMOF lipid status:**
+  - After the hematoma‑related hold on 12/8, **TPN was cleared to resume “yesterday afternoon” (12/8) after CT chest**, and:
+    - As of 12/9 morning, **both TPN and SMOFlipid “are now running at goal.”**
+  - Active TPN prescription:
+    - **TPN – Adult Special Formula**
+      - 1,600 mL/day via central line.
+      - Run at **67 mL/hr** over ~24 hours.
+    - **SMOFlipid 20% 40 g/day**
+      - 200 mL at **16.6 mL/hr** over 12 hours.
+  - The regimen is essentially the same as described in the main report (~1,387 kcal/day, 70 g protein, 40 g fat), just reconfirmed as **back at full dose**.
+
+- **Electrolytes & adjustments:**
+  - **Sodium 133 mmol/L** on 12/9 (slightly low).
+  - Dietitian notes that because she **did not receive the full TPN bag on 12/8**, they will **monitor Na** before changing TPN sodium content.
+  - Other electrolytes are acceptable:
+    - K 4.7, Mg 1.7, Phos 3.7, Ca 7.9 (chronically low‑normal to low).
+
+- **Monitoring plan (TPN‑specific):**
+  - **Daily** Chem‑8, Mg, Phos until stable, then **twice weekly**.
+  - **POC glucose q4h** at initiation and dose changes, then daily once stable (goal 70–180 mg/dL).
+  - **Weekly**: CBC, LFTs, triglycerides, CRP, prealbumin.
+  - **Strict I/Os** and **daily weights**.
+  - Reassessment timing per institutional **Level of Care Policy III**.
+
+- **Fluids & volume status:**
+  - In addition to TPN and lipids, she is on **Lactated Ringers 80 mL/hr**.
+  - I/O summary (24‑hour windows starting 07:00):
+    - 12/7: intake ~**3982 mL**, output **1600 mL**, net **+2382 mL**.
+    - 12/8: intake ~**3360 mL**, output **2600 mL**, net **+760 mL**.
+    - 12/9 (partial): intake **1295 mL**, output **900 mL**, net **+395 mL**.
+  - This confirms a **recent net positive fluid balance**, driven by IV fluids, TPN, and blood products.
+
+- **Weight:**
+  - New measured weight on 12/9: **63.4 kg** at 10:25.
+  - Previously documented hospital weight was **59.4 kg** on 12/1.
+  - The ~4 kg increase likely reflects a combination of fluid resuscitation, transfusions, and stabilization of nutritional support rather than purely lean mass gain.
+
+---
+
+### B.9 Vitals and Key Labs Snapshot (12/9)
+
+**Vitals (across Gen Med and ID notes):**
+
+- Temp: **36.6–36.8°C (oral)**
+- HR: **~99 bpm** (monitored).
+- RR: **16–19 breaths/min**.
+- BP: **~108/58 mmHg**.
+- SpO₂: **98–99% on room air**.
+- Height: **170.18 cm**; Weight: **63.4 kg**; BMI: **21.9**.
+
+**Key labs on 12/9 (most abnormal/clinically important values):**
+
+- **CBC:**
+  - WBC: **11–12 K/uL** (mild leukocytosis, fluctuating).
+  - Hgb: **6.9 g/dL (critical nadir) → 7.9–9.4 g/dL post‑transfusion**.
+  - Hct: **20.8% (critical) → low 20s to high 20s**.
+  - Platelets: **91–98 K/uL** (improving from 70 K).
+- **Basic chemistry:**
+  - Na: **133 mmol/L** (mild hyponatremia).
+  - K: **4.7 mmol/L**.
+  - Cl: **104 mmol/L**.
+  - CO₂ (bicarbonate): **25 mmol/L**.
+  - BUN: **11 mg/dL**.
+  - Creatinine: **0.50 mg/dL** (renal function fully recovered).
+  - Anion gap: **4 mmol/L** (low, consistent with dilution/TPN context).
+- **Electrolytes/minerals:**
+  - Ca: **7.9 mg/dL** (low).
+  - Mg: **1.7 mg/dL**.
+  - Phos: **3.7 mg/dL**.
+- **Liver panel (from 12/8, still current as of 12/9):**
+  - AST: **32 IU/L**.
+  - ALT: **135 IU/L** (down from peaks).
+  - ALP: **153 IU/L** (mildly elevated).
+  - Total bilirubin: **0.7 mg/dL**.
+  - Direct bilirubin: **0.4 mg/dL**.
+  - Albumin: **2.4 g/dL**.
+  - Total protein: **4.7 g/dL**.
+  - CPK: **21 IU/L** (low, no concern for myopathy at this time).
+- **Coagulation:**
+  - PT: **11.0 sec**.
+  - INR: **1.0**.
+  - aPTT: **26 sec** (normalized off heparin).
+- **Others:**
+  - Lactic acid last checked 12/1: **2.2–2.4 → normal**.
+  - Triglycerides, lipids: acceptable for TPN (TG 101 mg/dL on 12/1).
+
+---
+
+### B.10 EMR Problem List, Allergies, and Medication Context
+
+The Gen Med note also provides a **structured EMR snapshot** that aligns with, but does not substantially change, existing information:
+
+- **Active EMR problems** (already covered in main text but listed explicitly):
+  - Anemia; at risk of VTE; coagulopathy; frequent admissions; history of COVID‑19; history of falls; obesity; “procedure contraindicated”; ulcerative colitis.
+- **Allergies:**
+  - **Codeine** (reaction not specified).
+  - **Vancomycin** – rash.
+  - **Piperacillin‑tazobactam (Zosyn)** – welt.
+
+- **Medication context:**
+  - Active med list is broadly similar to that already described (LR, cefepime, daptomycin, Flagyl, nystatin, TPN, SMOFlipid, losartan, loperamide, Gattex, PRN antiemetics/analgesics).
+  - Importantly:
+    - **Heparin drip and enoxaparin are suspended**.
+    - **SCDs are in place**.
+    - **ID explicitly recommends stopping daptomycin and Flagyl**, leaving **cefepime as the primary systemic antibiotic**.
