@@ -839,7 +839,7 @@ def dsp_console_print(event: dict):
         )
 
     elif event_type == "data-python-exec-call-start":
-        code = event["code"]
+        code = event["code"].strip()
         console.print("[dim]<python_exec_call>[/dim]", highlight=False)
         console.print(
             Syntax(
@@ -852,8 +852,8 @@ def dsp_console_print(event: dict):
 
     elif event_type == "data-python-exec-call-end":
         status = event["status"]
-        stdout = event["stdout"]
-        stderr = event["stderr"]
+        stdout = event["stdout"].strip()
+        stderr = event["stderr"].strip()
         image_attachments = event["image_attachments"]
 
         console.print("[dim]<python_exec_result>[/dim]", highlight=False)
