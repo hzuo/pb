@@ -757,6 +757,18 @@ def python_exec_impl(source: str) -> PythonExecResponse:
 console = Console(stderr=True, soft_wrap=True)
 dspq = queue.Queue()
 
+# NOTE(hzuo-25-12-10-wed): We buffer streaming content so we can render it with
+# Syntax(..., "markdown") at the end of each block. This is the simplest approach
+# that works uniformly across all providers (OpenAI streams incrementally, while
+# Anthropic/Gemini send complete blocks). During streaming we stay silent; the
+# user sees the opening tag and knows something is happening, then sees the
+# formatted output when the block completes.
+_dsp_buffers = {
+    "reasoning": "",
+    "text": "",
+    "tool-input": "",
+}
+
 
 def python_exec(code: str) -> PythonExecResponse:
     dspq.put(
@@ -888,14 +900,12 @@ def dsp_console_print(event: dict):
         console.print("[dim]</python_exec_result>[/dim]", highlight=False)
 
     elif event_type == "data-openai-responses-api-streaming-event-pre":
-        event_type = event["event_type"]
-        if event_type == "response.reasoning_summary_part.added":
-            console.print("[dim]<reasoning_summary_part>[/dim]", highlight=False)
+        pass  # ignore OpenAI-specific part events
 
     elif event_type == "data-openai-responses-api-streaming-event-post":
-        event_type = event["event_type"]
-        if event_type == "response.reasoning_summary_part.done":
-            console.print("\n[dim]</reasoning_summary_part>[/dim]", highlight=False)
+        # Add blank line between OpenAI reasoning summary parts
+        if event.get("event_type") == "response.reasoning_summary_part.done":
+            _dsp_buffers["reasoning"] += "\n\n"
 
     elif event_type == "data-response-start":
         console.print("[dim]<response>[/dim]", highlight=False)
@@ -918,34 +928,64 @@ def dsp_console_print(event: dict):
         console.print()
 
     elif event_type == "reasoning-start":
+        _dsp_buffers["reasoning"] = ""
         console.print("[dim]<reasoning>[/dim]", highlight=False)
 
     elif event_type == "reasoning-end":
+        reasoning_text = _dsp_buffers["reasoning"].strip()
+        if reasoning_text:
+            console.print(
+                Syntax(
+                    reasoning_text,
+                    "markdown",
+                    background_color="default",
+                )
+            )
         console.print("[dim]</reasoning>[/dim]", highlight=False)
 
     elif event_type == "reasoning-delta":
-        delta = event.get("delta", "")
-        console.print(delta, end="", highlight=False)
+        _dsp_buffers["reasoning"] += event.get("delta", "")
 
     elif event_type == "text-start":
+        _dsp_buffers["text"] = ""
         console.print("\n[dim]<message>[/dim]", highlight=False)
 
     elif event_type == "text-end":
-        console.print("\n[dim]</message>[/dim]", highlight=False)
+        text_content = _dsp_buffers["text"].strip()
+        if text_content:
+            console.print(
+                Syntax(
+                    text_content,
+                    "markdown",
+                    background_color="default",
+                )
+            )
+        console.print("[dim]</message>[/dim]", highlight=False)
 
     elif event_type == "text-delta":
-        delta = event.get("delta", "")
-        console.print(delta, end="", highlight=False)
+        _dsp_buffers["text"] += event.get("delta", "")
 
+    # NOTE(hzuo-25-12-10-wed): Commenting out tool-input display since we print the
+    # python code in data-python-exec-call-start right after anyway
     elif event_type == "tool-input-start":
-        console.print("\n[dim]<function_call>[/dim]", highlight=False)
+        _dsp_buffers["tool-input"] = ""
+        # console.print("\n[dim]<function_call>[/dim]", highlight=False)
 
     elif event_type == "tool-input-end":
-        console.print("\n[dim]</function_call>[/dim]", highlight=False)
+        # tool_input_content = _dsp_buffers["tool-input"].strip()
+        # if tool_input_content:
+        #     console.print(
+        #         Syntax(
+        #             tool_input_content,
+        #             "json",
+        #             background_color="default",
+        #         )
+        #     )
+        # console.print("[dim]</function_call>[/dim]", highlight=False)
+        pass
 
     elif event_type == "tool-input-delta":
-        delta = event.get("delta", "")
-        console.print(delta, end="", highlight=False)
+        _dsp_buffers["tool-input"] += event.get("delta", "")
 
     elif event_type == "error":
         error_text = event.get("errorText", "")
