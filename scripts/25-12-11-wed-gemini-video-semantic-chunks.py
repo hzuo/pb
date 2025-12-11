@@ -46,6 +46,17 @@ from typing import Any
 
 import requests
 
+
+def eprint(*args, **kwargs):
+    """Print to stderr."""
+    print(*args, file=sys.stderr, **kwargs)
+
+
+def indent_lines(text: str, prefix: str = "    ") -> str:
+    """Indent each line of text with the given prefix."""
+    return "\n".join(prefix + line for line in text.splitlines())
+
+
 # ============================================================================
 # CONFIG
 # ============================================================================
@@ -272,7 +283,7 @@ def wait_for_active(api_key: str, file_obj: dict, poll_sec: int = 5) -> dict:
     name = file_obj.get("name")
     while (file_obj.get("state") or "").upper() != "ACTIVE":
         state = file_obj.get("state")
-        print(f"  [files] state={state}, waiting {poll_sec}s...", file=sys.stderr)
+        eprint(f"  [files] state={state}, waiting {poll_sec}s...")
         time.sleep(poll_sec)
         resp = requests.get(
             f"{GEMINI_API_BASE}/v1beta/{name}",
@@ -289,7 +300,7 @@ def delete_remote_file(api_key: str, file_name: str) -> None:
     url = f"{GEMINI_API_BASE}/v1beta/{file_name}"
     resp = requests.delete(url, headers={"x-goog-api-key": api_key}, timeout=30)
     if resp.status_code not in (200, 404):
-        print(f"  [cleanup] Warning: Failed to delete {file_name}", file=sys.stderr)
+        eprint(f"  [cleanup] Warning: Failed to delete {file_name}")
 
 
 def get_file_uri(file_obj: dict) -> str:
@@ -314,7 +325,7 @@ def call_generate_content(api_key: str, payload: dict) -> dict:
         timeout=600,
     )
     if not resp.ok:
-        print(f"API Error: {resp.text}", file=sys.stderr)
+        eprint(f"API Error: {resp.text}")
     resp.raise_for_status()
     return resp.json()
 
@@ -339,6 +350,7 @@ def analyze_segment(
     total_chunks: int,
     prior_chunks: list[dict],
     user_context: str | None,
+    verbose: bool = False,
 ) -> list[dict]:
     """Analyze a 15-minute segment and extract semantic chunks."""
 
@@ -398,17 +410,47 @@ def analyze_segment(
             # Only pass what differs from defaults
             "responseMimeType": "application/json",
             "responseJsonSchema": SEMANTIC_CHUNKS_SCHEMA,
+            "thinkingConfig": {
+                "includeThoughts": True,
+            },
         },
     }
 
+    if verbose:
+        eprint(f"\n  [request] Sending to {GEMINI_MODEL}...")
+        eprint(f"  [request] Segment: {chunk.start_sec}s - {chunk.end_sec}s")
+        eprint(f"  [request] Prior chunks in context: {len(prior_chunks)}")
+
     resp = call_generate_content(api_key, payload)
+
+    if verbose:
+        # Print usage metadata
+        usage = resp.get("usageMetadata", {})
+        eprint("  [response] usageMetadata:")
+        eprint(indent_lines(json.dumps(usage, indent=2)))
+
+        # Print thoughts if present
+        try:
+            parts = resp["candidates"][0]["content"]["parts"]
+            for part in parts:
+                if part.get("thought"):
+                    thought_text = part.get("text", "")
+                    eprint(f"  [response] Model thinking ({len(thought_text)} chars):")
+                    eprint(indent_lines(thought_text))
+        except (KeyError, IndexError):
+            pass
+
     text = extract_text(resp)
 
     try:
         data = json.loads(text)
-        return data.get("chunks", [])
+        chunks = data.get("chunks", [])
+        if verbose:
+            eprint(f"  [response] Chunks ({len(chunks)}):")
+            eprint(indent_lines(json.dumps(chunks, indent=2)))
+        return chunks
     except json.JSONDecodeError:
-        print("Warning: Failed to parse response as JSON", file=sys.stderr)
+        eprint("Warning: Failed to parse response as JSON")
         return []
 
 
@@ -436,6 +478,12 @@ def main():
         default=None,
         help="Output JSON file (default: stdout)",
     )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Verbose output: print requests, responses, and usage metadata to stderr",
+    )
     args = parser.parse_args()
 
     if not args.video.exists():
@@ -444,37 +492,40 @@ def main():
     api_key = require_api_key()
     meta = probe_video(args.video)
 
-    print(f"Video: {meta.path}", file=sys.stderr)
-    print(
-        f"Duration: {format_timestamp(meta.duration_sec)} ({meta.duration_sec:.1f}s)",
-        file=sys.stderr,
+    eprint(f"Video: {meta.path}")
+    eprint(
+        f"Duration: {format_timestamp(meta.duration_sec)} ({meta.duration_sec:.1f}s)"
     )
-    print(f"Size: {meta.size_bytes / 1024**2:.1f} MB", file=sys.stderr)
-    print(f"Audio: {meta.has_audio}", file=sys.stderr)
+    eprint(f"Size: {meta.size_bytes / 1024**2:.1f} MB")
+    eprint(f"Audio: {meta.has_audio}")
 
     # Plan segments
     call_chunks = plan_call_chunks(meta)
-    print(
-        f"\nPlanned {len(call_chunks)} segment(s) of {CALL_CHUNK_DURATION_SEC // 60} min each",
-        file=sys.stderr,
+    eprint(
+        f"\nPlanned {len(call_chunks)} segment(s) of {CALL_CHUNK_DURATION_SEC // 60} min each"
     )
 
     # Upload video once
-    print("\nUploading video...", file=sys.stderr)
+    eprint("\nUploading video...")
+    if args.verbose:
+        eprint(f"  [upload] File: {meta.path}")
+        eprint(f"  [upload] Size: {meta.size_bytes} bytes")
     file_obj = upload_file(api_key, meta.path)
+    if args.verbose:
+        eprint("  [upload] Response:")
+        eprint(indent_lines(json.dumps(file_obj, indent=2)))
     file_obj = wait_for_active(api_key, file_obj)
     file_uri = get_file_uri(file_obj)
-    print(f"  Ready: {file_uri}", file=sys.stderr)
+    eprint(f"  Ready: {file_uri}")
 
     # Process each segment with rolling context
     all_semantic_chunks: list[dict] = []
 
     try:
         for chunk in call_chunks:
-            print(
+            eprint(
                 f"\n=== Segment {chunk.index + 1}/{len(call_chunks)} "
-                f"({format_timestamp(chunk.start_sec)}-{format_timestamp(chunk.end_sec)}) ===",
-                file=sys.stderr,
+                f"({format_timestamp(chunk.start_sec)}-{format_timestamp(chunk.end_sec)}) ==="
             )
 
             segment_chunks = analyze_segment(
@@ -484,27 +535,30 @@ def main():
                 total_chunks=len(call_chunks),
                 prior_chunks=all_semantic_chunks,
                 user_context=args.context,
+                verbose=args.verbose,
             )
 
-            print(f"  Found {len(segment_chunks)} semantic chunks", file=sys.stderr)
+            eprint(f"  Found {len(segment_chunks)} semantic chunks")
             all_semantic_chunks.extend(segment_chunks)
 
     finally:
         # Clean up uploaded file
         if file_obj and file_obj.get("name"):
-            print(f"\n[cleanup] Deleting {file_obj['name']}...", file=sys.stderr)
+            eprint(f"\n[cleanup] Deleting {file_obj['name']}...")
             delete_remote_file(api_key, file_obj["name"])
+            if args.verbose:
+                eprint("  [cleanup] Done")
 
     # Output results
-    print(f"\n{'=' * 60}", file=sys.stderr)
-    print(f"TOTAL: {len(all_semantic_chunks)} semantic chunks", file=sys.stderr)
-    print(f"{'=' * 60}", file=sys.stderr)
+    eprint(f"\n{'=' * 60}")
+    eprint(f"TOTAL: {len(all_semantic_chunks)} semantic chunks")
+    eprint(f"{'=' * 60}")
 
     output_json = json.dumps(all_semantic_chunks, indent=2, ensure_ascii=False)
 
     if args.output:
         args.output.write_text(output_json, encoding="utf-8")
-        print(f"\nOutput written to: {args.output}", file=sys.stderr)
+        eprint(f"\nOutput written to: {args.output}")
     else:
         print(output_json)
 
