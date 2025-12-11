@@ -1359,6 +1359,8 @@ openai_python_exec_tool = openai.pydantic_function_tool(
 
 openai_service_tier: Literal["priority", "default"] | None = None
 
+openai_model: Literal["gpt-5.1", "gpt-5.2"] = "gpt-5.1"
+
 
 def openai_call(
     client: openai.OpenAI,
@@ -1376,9 +1378,11 @@ def openai_call(
         else:
             openai_service_tier = "default"
 
+    effort = "xhigh" if openai_model == "gpt-5.2" else "high"
+
     with client.responses.stream(
-        model="gpt-5.2",
-        reasoning={"effort": "xhigh", "summary": "detailed"},
+        model=openai_model,
+        reasoning={"effort": effort, "summary": "detailed"},
         instructions=instructions,
         tools=[openai_python_exec_tool],
         tool_choice="auto",
@@ -2052,12 +2056,38 @@ def get_model_interface():
     parser.add_argument(
         "-m",
         "--model",
-        choices=["openai", "anthropic", "sonnet", "haiku", "opus", "gemini"],
+        choices=[
+            "openai",
+            "gpt51",
+            "gpt52",
+            "anthropic",
+            "sonnet",
+            "haiku",
+            "opus",
+            "gemini",
+        ],
         default="openai",
     )
     args = parser.parse_args()
+    global openai_model
     global anthropic_model
-    if args.model == "openai":
+    if args.model in ("openai", "gpt51", "gpt52"):
+        if args.model == "openai":
+            # openai (which is the default) defaults to gpt-5.1
+            # this is here for backwards compatibility
+            model_type = "openai-gpt51"
+            openai_model = "gpt-5.1"
+        elif args.model == "gpt51":
+            # option for explicitly using gpt-5.1
+            model_type = "openai-gpt51"
+            openai_model = "gpt-5.1"
+        elif args.model == "gpt52":
+            # option for explicitly using gpt-5.2
+            model_type = "openai-gpt52"
+            openai_model = "gpt-5.2"
+        else:
+            raise AssertionError
+
         api_key = os.environ.get("OPENAI_API_KEY")
         assert api_key, "OPENAI_API_KEY is not set"
         client = openai.OpenAI(api_key=api_key)
@@ -2066,7 +2096,7 @@ def get_model_interface():
             return openai_run_turn(client, history, turn_number)
 
         return {
-            "model_type": "openai",
+            "model_type": model_type,
             "session_namespace": "personalbot01",
             "validate_history": openai_validate_history,
             "append_user_message": openai_append_user_message,

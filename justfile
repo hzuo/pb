@@ -10,7 +10,15 @@ alias mo := marimo
 
 bot:
   #!/usr/bin/env bash
-  uv run --env-file=.env personalbot.py -m openai
+  uv run --env-file=.env personalbot.py -m gpt52
+
+bot-gpt51:
+  #!/usr/bin/env bash
+  uv run --env-file=.env personalbot.py -m gpt51
+
+bot-gpt52:
+  #!/usr/bin/env bash
+  uv run --env-file=.env personalbot.py -m gpt52
 
 bot-sonnet:
   #!/usr/bin/env bash
@@ -29,6 +37,8 @@ bot-gemini:
   uv run --env-file=.env personalbot.py -m gemini
 
 alias b := bot
+alias b51 := bot-gpt51
+alias b52 := bot-gpt52
 alias bs := bot-sonnet
 alias bh := bot-haiku
 alias bo := bot-opus
