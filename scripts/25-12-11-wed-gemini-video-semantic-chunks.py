@@ -19,8 +19,8 @@ Usage:
     uv run gemini-video-semantic-chunks.py video.mp4 -o chunks.json
 
 The output is a JSON array of semantic chunks, each with:
-- start_sec: Start timestamp in seconds
-- end_sec: End timestamp in seconds
+- start_timestamp: Start timestamp in MM:SS or H:MM:SS format
+- end_timestamp: End timestamp in MM:SS or H:MM:SS format
 - summary: Detailed description of what happens in this chunk
 - workflow_audio_description: Detailed workflow description when workflow is being shown, null otherwise
 
@@ -29,6 +29,8 @@ Design notes:
 - Only overrides responseMimeType and responseJsonSchema for structured output
 - Rolling context: each segment receives all prior semantic chunks
 - Biases towards granular sub-minute chunks with multiple sentences each
+
+Author: personalbot02-25-12-10-22-21-08-82ea23b7-710c-49ee-9334-1f49dd278328
 """
 
 from __future__ import annotations
@@ -83,12 +85,12 @@ Your task is to break down video content into small, semantically meaningful chu
 - **Be granular**: Prefer many small chunks over few large ones
 - **Sub-minute chunks**: Most chunks should be 10-60 seconds, rarely longer
 - **Topic boundaries**: Start a new chunk when the topic, speaker focus, or workflow step changes
-- **Strict contiguity**: Each chunk's start_sec must exactly equal the previous chunk's end_sec. No gaps. First chunk starts at segment start, last chunk ends at segment end.
+- **Strict contiguity**: Each chunk's start_timestamp must exactly equal the previous chunk's end_timestamp. No gaps. First chunk starts at segment start, last chunk ends at segment end.
 
 ## For Each Chunk Provide
 
-1. **start_sec**: When this semantic unit begins (seconds from VIDEO START, not segment start)
-2. **end_sec**: When this semantic unit ends (must equal next chunk's start_sec)
+1. **start_timestamp**: When this semantic chunk begins in MM:SS format (or H:MM:SS if >= 1 hour). Time from VIDEO START, not segment start.
+2. **end_timestamp**: When this semantic chunk ends in MM:SS format (must equal next chunk's start_timestamp). Also relative to video start.
 3. **summary**: 2-4 sentence narrative description of what happens
 4. **workflow_audio_description**: See below
 
@@ -108,55 +110,55 @@ Be verbose and specific. Describe:
 - **Table contents**: column headers AND the actual data values in visible rows
 - **Form contents**: field labels AND their current values
 
-Write in flowing, detailed prose. Imagine you're writing a step-by-step tutorial for someone who cannot see the screen. Include every detail they would need to follow along and perform the same actions.
-
 Litmus Test: The workflow should be **perfectly reproducible** solely on the basis of your audio description. If someone would struggle to reproduce the workflow solely on the basis of workflow_audio_description, introduce additional detail and precision until it is clear that they would no longer struggle.
+
+Write in flowing, detailed prose. Imagine you're writing a step-by-step tutorial for someone who cannot see the screen. Include every detail they would need to follow along and perform the same actions.
 """.strip()
 
 # Output schema for semantic chunks
 SEMANTIC_CHUNKS_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
-        "segment_start_sec": {
-            "type": "number",
-            "description": "Start of the analyzed segment in seconds from video beginning",
+        "segment_start_timestamp": {
+            "type": "string",
+            "description": "Start of the analyzed segment in MM:SS or H:MM:SS format",
         },
-        "segment_end_sec": {
-            "type": "number",
-            "description": "End of the analyzed segment in seconds from video beginning",
+        "segment_end_timestamp": {
+            "type": "string",
+            "description": "End of the analyzed segment in MM:SS or H:MM:SS format",
         },
         "chunks": {
             "type": "array",
             "items": {
                 "type": "object",
                 "properties": {
-                    "start_sec": {
-                        "type": "number",
-                        "description": "Start timestamp in seconds from video beginning",
+                    "start_timestamp": {
+                        "type": "string",
+                        "description": "Start timestamp in MM:SS or H:MM:SS format, e.g. '08:50' or '1:05:12'. This should be absolute and relative to the start of the full video, not the start of this particular segment. So use the segment_start_timestamp as the base.",
                     },
-                    "end_sec": {
-                        "type": "number",
-                        "description": "End timestamp in seconds from video beginning",
+                    "end_timestamp": {
+                        "type": "string",
+                        "description": "End timestamp in MM:SS or H:MM:SS format. Also relative to video start.",
                     },
                     "summary": {
                         "type": "string",
-                        "description": "2-4 sentence narrative description of this chunk",
+                        "description": "Comprehensive description of this chunk. Typically at least 2-4 sentences.",
                     },
                     "workflow_audio_description": {
                         "type": ["string", "null"],
-                        "description": "Detailed workflow description of screen content and actions - to an extent sufficient for perfect reproducibility - or null if no workflow is being shown",
+                        "description": "Comprehensive description of screen content and actions if a workflow is being shown. Typically at least 100-200 words. Null if no workflow is being shown.",
                     },
                 },
                 "required": [
-                    "start_sec",
-                    "end_sec",
+                    "start_timestamp",
+                    "end_timestamp",
                     "summary",
                     "workflow_audio_description",
                 ],
             },
         },
     },
-    "required": ["segment_start_sec", "segment_end_sec", "chunks"],
+    "required": ["segment_start_timestamp", "segment_end_timestamp", "chunks"],
 }
 
 FFPROBE_BIN = os.environ.get("FFPROBE_BIN", "ffprobe")
@@ -252,13 +254,17 @@ def plan_segments(meta: VideoMetadata, segment_duration_sec: int) -> list[Segmen
 
 
 def format_timestamp(seconds: float) -> str:
-    """Format seconds as MM:SS or H:MM:SS."""
+    """
+    Format seconds as MM:SS or H:MM:SS.
+
+    Examples: 0 -> '00:00', 90 -> '01:30', 3809 -> '1:03:29'
+    """
     h = int(seconds // 3600)
     m = int((seconds % 3600) // 60)
     s = int(seconds % 60)
     if h > 0:
         return f"{h}:{m:02d}:{s:02d}"
-    return f"{m}:{s:02d}"
+    return f"{m:02d}:{s:02d}"
 
 
 # ============================================================================
@@ -395,9 +401,9 @@ def analyze_segment(
         # Summarize prior chunks concisely to fit context
         prior_summary = "\n".join(
             [
-                f"[{format_timestamp(c['start_sec'])}-{format_timestamp(c['end_sec'])}] {c['summary'][:200]}..."
+                f"[{c['start_timestamp']}-{c['end_timestamp']}] {c['summary'][:200]}..."
                 if len(c["summary"]) > 200
-                else f"[{format_timestamp(c['start_sec'])}-{format_timestamp(c['end_sec'])}] {c['summary']}"
+                else f"[{c['start_timestamp']}-{c['end_timestamp']}] {c['summary']}"
                 for c in prior_chunks[-50:]  # Last 50 chunks for context
             ]
         )
@@ -409,6 +415,14 @@ def analyze_segment(
             CURRENT SEGMENT: {format_timestamp(segment.start_sec)} to {format_timestamp(segment.end_sec)} (segment {segment.index + 1} of {total_segments})
 
             Analyze this segment and break it into granular semantic chunks.
+
+            Follow these guidelines:
+            - Maximize the amount of information you extract from both the video and audio.
+            - Describe everything that happens in the segment in great detail.
+            - Both the `summary` and `workflow_audio_description` are expected to be very verbose, do not shy away from verbosity.
+            - If someone reads the `summary` and the `workflow_audio_description` for every chunk, they should be fully caught up on EVERYTHING that happens in the segment.
+            - In other words, if they read your complete output, they should miss nothing if they were to never watch this segment. Ensure this holds true.
+            - Be maximally comprehensive.
             """
         ).strip()
     )
@@ -441,6 +455,7 @@ def analyze_segment(
             "responseMimeType": "application/json",
             "responseJsonSchema": SEMANTIC_CHUNKS_SCHEMA,
             "thinkingConfig": {
+                "thinkingLevel": "HIGH",
                 "includeThoughts": True,
             },
         },
