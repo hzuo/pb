@@ -22,12 +22,12 @@ The output is a JSON array of semantic chunks, each with:
 - start_timestamp: Start timestamp in MM:SS or H:MM:SS format
 - end_timestamp: End timestamp in MM:SS or H:MM:SS format
 - summary: Detailed description of what happens in this chunk
-- workflow_audio_description: Detailed workflow description when workflow is being shown, null otherwise
+- workflow_description: Detailed workflow description when workflow is being shown, null otherwise
 
 Design notes:
 - Uses Gemini 3 Pro defaults (temperature=1.0, thinkingLevel=HIGH)
 - Only overrides responseMimeType and responseJsonSchema for structured output
-- Rolling context: each segment receives all prior semantic chunks
+- Rolling context: each segment receives summaries of all prior segments (not individual chunks)
 - Biases towards granular sub-minute chunks with multiple sentences each
 
 Author: personalbot02-25-12-10-22-21-08-82ea23b7-710c-49ee-9334-1f49dd278328
@@ -92,9 +92,9 @@ Your task is to break down video content into small, semantically meaningful chu
 1. **start_timestamp**: When this semantic chunk begins in MM:SS format (or H:MM:SS if >= 1 hour). Time from VIDEO START, not segment start.
 2. **end_timestamp**: When this semantic chunk ends in MM:SS format (must equal next chunk's start_timestamp). Also relative to video start.
 3. **summary**: 2-4 sentence narrative description of what happens
-4. **workflow_audio_description**: See below
+4. **workflow_description**: See below
 
-## workflow_audio_description
+## workflow_description
 
 This field captures workflow information when a screen is being shared, and a workflow is being shown.
 
@@ -110,7 +110,7 @@ Be verbose and specific. Describe:
 - **Table contents**: column headers AND the actual data values in visible rows
 - **Form contents**: field labels AND their current values
 
-Litmus Test: The workflow should be **perfectly reproducible** solely on the basis of your audio description. If someone would struggle to reproduce the workflow solely on the basis of workflow_audio_description, introduce additional detail and precision until it is clear that they would no longer struggle.
+Litmus Test: The workflow should be **perfectly reproducible** solely on the basis of your description. If someone would struggle to reproduce the workflow solely on the basis of workflow_description, introduce additional detail and precision until it is clear that they would no longer struggle.
 
 Write in flowing, detailed prose. Imagine you're writing a step-by-step tutorial for someone who cannot see the screen. Include every detail they would need to follow along and perform the same actions.
 """.strip()
@@ -144,7 +144,7 @@ SEMANTIC_CHUNKS_SCHEMA: dict[str, Any] = {
                         "type": "string",
                         "description": "Comprehensive description of this chunk. Typically at least 2-4 sentences.",
                     },
-                    "workflow_audio_description": {
+                    "workflow_description": {
                         "type": ["string", "null"],
                         "description": "Comprehensive description of screen content and actions if a workflow is being shown. Typically at least 100-200 words. Null if no workflow is being shown.",
                     },
@@ -153,12 +153,21 @@ SEMANTIC_CHUNKS_SCHEMA: dict[str, Any] = {
                     "start_timestamp",
                     "end_timestamp",
                     "summary",
-                    "workflow_audio_description",
+                    "workflow_description",
                 ],
             },
         },
+        "segment_summary": {
+            "type": "string",
+            "description": "Overall summary of this segment, particularly focusing on context relevant for interpreting future segments. Typically at least 4 sentences.",
+        },
     },
-    "required": ["segment_start_timestamp", "segment_end_timestamp", "chunks"],
+    "required": [
+        "segment_start_timestamp",
+        "segment_end_timestamp",
+        "chunks",
+        "segment_summary",
+    ],
 }
 
 FFPROBE_BIN = os.environ.get("FFPROBE_BIN", "ffprobe")
@@ -355,17 +364,30 @@ def get_file_uri(file_obj: dict) -> str:
 
 
 def call_generate_content(api_key: str, payload: dict) -> dict:
-    """Call generateContent endpoint."""
-    resp = requests.post(
-        f"{GEMINI_API_BASE}/v1beta/models/{GEMINI_MODEL}:generateContent",
-        headers={"x-goog-api-key": api_key, "Content-Type": "application/json"},
-        json=payload,
-        timeout=600,
-    )
-    if not resp.ok:
+    """Call generateContent endpoint with exponential backoff retry."""
+    retryable_status_codes = {429, 500, 502, 503, 504}
+    max_backoff_sec = 60
+
+    url = f"{GEMINI_API_BASE}/v1beta/models/{GEMINI_MODEL}:generateContent"
+    headers = {"x-goog-api-key": api_key, "Content-Type": "application/json"}
+
+    backoff = 1.0
+    while True:
+        resp = requests.post(url, headers=headers, json=payload, timeout=600)
+
+        if resp.ok:
+            return resp.json()
+
+        if resp.status_code in retryable_status_codes:
+            eprint(f"  [retry] {resp.status_code}: {resp.text[:500]}")
+            eprint(f"  [retry] Backing off {backoff:.1f}s...")
+            time.sleep(backoff)
+            backoff = min(backoff * 2, max_backoff_sec)
+            continue
+
+        # Non-retryable error
         eprint(f"API Error: {resp.text}")
-    resp.raise_for_status()
-    return resp.json()
+        resp.raise_for_status()
 
 
 def extract_text(resp: dict) -> str:
@@ -386,28 +408,27 @@ def analyze_segment(
     file_uri: str,
     segment: Segment,
     total_segments: int,
-    prior_chunks: list[dict],
+    prior_segment_summaries: list[dict],
     user_context: str | None,
     fps: float = DEFAULT_FPS,
     verbose: bool = False,
-) -> list[dict]:
-    """Analyze a video segment and extract semantic chunks."""
+) -> tuple[list[dict], str]:
+    """Analyze a video segment and extract semantic chunks.
+
+    Returns:
+        Tuple of (chunks, segment_summary)
+    """
 
     # Build the user prompt
     prompt_parts = []
 
-    # Rolling context from prior chunks
-    if prior_chunks:
-        # Summarize prior chunks concisely to fit context
-        prior_summary = "\n".join(
-            [
-                f"[{c['start_timestamp']}-{c['end_timestamp']}] {c['summary'][:200]}..."
-                if len(c["summary"]) > 200
-                else f"[{c['start_timestamp']}-{c['end_timestamp']}] {c['summary']}"
-                for c in prior_chunks[-50:]  # Last 50 chunks for context
-            ]
+    # Rolling context from prior segment summaries
+    if prior_segment_summaries:
+        prior_context = "\n".join(
+            f"[{s['start_timestamp']}-{s['end_timestamp']}] {s['summary']}"
+            for s in prior_segment_summaries
         )
-        prompt_parts.append(f"PRIOR CONTENT (for context):\n{prior_summary}\n")
+        prompt_parts.append(f"PRIOR SEGMENTS (for context):\n{prior_context}\n")
 
     prompt_parts.append(
         textwrap.dedent(
@@ -419,8 +440,8 @@ def analyze_segment(
             Follow these guidelines:
             - Maximize the amount of information you extract from both the video and audio.
             - Describe everything that happens in the segment in great detail.
-            - Both the `summary` and `workflow_audio_description` are expected to be very verbose, do not shy away from verbosity.
-            - If someone reads the `summary` and the `workflow_audio_description` for every chunk, they should be fully caught up on EVERYTHING that happens in the segment.
+            - Both the `summary` and `workflow_description` are expected to be very verbose, do not shy away from verbosity.
+            - If someone reads the `summary` and the `workflow_description` for every chunk, they should be fully caught up on EVERYTHING that happens in the segment.
             - In other words, if they read your complete output, they should miss nothing if they were to never watch this segment. Ensure this holds true.
             - Be maximally comprehensive.
             """
@@ -464,7 +485,7 @@ def analyze_segment(
     if verbose:
         eprint(f"\n  [request] Sending to {GEMINI_MODEL}...")
         eprint(f"  [request] Segment: {segment.start_sec}s - {segment.end_sec}s")
-        eprint(f"  [request] Prior chunks in context: {len(prior_chunks)}")
+        eprint(f"  [request] Prior segment summaries: {len(prior_segment_summaries)}")
 
     resp = call_generate_content(api_key, payload)
 
@@ -481,7 +502,8 @@ def analyze_segment(
                 if part.get("thought"):
                     thought_text = part.get("text", "")
                     eprint(f"  [response] Model thinking ({len(thought_text)} chars):")
-                    eprint(indent_lines(thought_text.strip()) + "\n")
+                    eprint(indent_lines(thought_text.strip()))
+                    eprint()
         except (KeyError, IndexError):
             pass
 
@@ -490,13 +512,16 @@ def analyze_segment(
     try:
         data = json.loads(text)
         chunks = data.get("chunks", [])
+        segment_summary = data.get("segment_summary", "")
         if verbose:
             eprint(f"  [response] Chunks ({len(chunks)}):")
             eprint(indent_lines(json.dumps(chunks, indent=2)))
-        return chunks
+            eprint()
+            eprint(f"  [response] Segment summary: {segment_summary}...")
+        return chunks, segment_summary
     except json.JSONDecodeError:
         eprint("Warning: Failed to parse response as JSON")
-        return []
+        return [], ""
 
 
 # ============================================================================
@@ -590,6 +615,7 @@ def main():
 
     # Process each segment with rolling context
     all_chunks: list[dict] = []
+    segment_summaries: list[dict] = []
 
     try:
         for segment in segments:
@@ -598,12 +624,12 @@ def main():
                 f"({format_timestamp(segment.start_sec)}-{format_timestamp(segment.end_sec)}) ==="
             )
 
-            chunks = analyze_segment(
+            chunks, segment_summary = analyze_segment(
                 api_key=api_key,
                 file_uri=file_uri,
                 segment=segment,
                 total_segments=len(segments),
-                prior_chunks=all_chunks,
+                prior_segment_summaries=segment_summaries,
                 user_context=args.context,
                 fps=args.fps,
                 verbose=args.verbose,
@@ -611,6 +637,15 @@ def main():
 
             eprint(f"\n  Found {len(chunks)} semantic chunks")
             all_chunks.extend(chunks)
+
+            # Track segment summary for rolling context
+            segment_summaries.append(
+                {
+                    "start_timestamp": format_timestamp(segment.start_sec),
+                    "end_timestamp": format_timestamp(segment.end_sec),
+                    "summary": segment_summary,
+                }
+            )
 
     finally:
         # Clean up uploaded file
