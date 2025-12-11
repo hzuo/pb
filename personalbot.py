@@ -425,7 +425,7 @@ class Helpers:
         self,
         instructions: str,
         input: str,
-        model: Literal["gpt-5.1", "gpt-5-mini"] = "gpt-5.1",
+        model: Literal["gpt-5.2", "gpt-5-mini"] = "gpt-5.2",
         reasoning_effort: Literal["low", "medium", "high"] = "high",
     ):
         api_key = os.environ.get("OPENAI_API_KEY")
@@ -453,7 +453,7 @@ class Helpers:
         output_schema_name: str,
         output_schema: dict[str, Any],
         # don't change these defaults unless the user says otherwise
-        model: Literal["gpt-5.1", "gpt-5-mini"] = "gpt-5.1",
+        model: Literal["gpt-5.2", "gpt-5-mini"] = "gpt-5.2",
         reasoning_effort: Literal["low", "medium", "high"] = "high",
     ) -> dict[str, Any]:
         openai_api_key = os.getenv("OPENAI_API_KEY")
@@ -1377,8 +1377,8 @@ def openai_call(
             openai_service_tier = "default"
 
     with client.responses.stream(
-        model="gpt-5.1",
-        reasoning={"effort": "high", "summary": "detailed"},
+        model="gpt-5.2",
+        reasoning={"effort": "xhigh", "summary": "detailed"},
         instructions=instructions,
         tools=[openai_python_exec_tool],
         tool_choice="auto",
