@@ -22,7 +22,7 @@ The output is a JSON array of semantic chunks, each with:
 - start_sec: Start timestamp in seconds
 - end_sec: End timestamp in seconds
 - summary: Detailed description of what happens in this chunk
-- audio_description: Exhaustive visual description for blind accessibility
+- workflow_audio_description: Detailed workflow description when workflow is being shown, null otherwise
 
 Design notes:
 - Uses Gemini 3 Pro defaults (temperature=1.0, thinkingLevel=HIGH)
@@ -71,14 +71,15 @@ CALL_CHUNK_DURATION_SEC = 15 * 60
 
 # System instruction: bias towards granular sub-minute chunks
 SYSTEM_INSTRUCTION = """
-You are an expert video analyst creating semantic segmentations with detailed workflow descriptions.
+You are an expert video analyst creating semantic segmentations of video content.
 
-Your task is to break down video content into small, semantically meaningful chunks with EXHAUSTIVE descriptions of what is being shown and done on screen.
+Your task is to break down video content into small, semantically meaningful chunks.
 
 ## Chunking Guidelines
+
 - **Be granular**: Prefer many small chunks over few large ones
 - **Sub-minute chunks**: Most chunks should be 10-60 seconds, rarely longer
-- **Topic boundaries**: Start a new chunk when the topic, screen, or workflow step changes
+- **Topic boundaries**: Start a new chunk when the topic, speaker focus, or workflow step changes
 - **Strict contiguity**: Each chunk's start_sec must exactly equal the previous chunk's end_sec. No gaps. First chunk starts at segment start, last chunk ends at segment end.
 
 ## For Each Chunk Provide
@@ -86,40 +87,27 @@ Your task is to break down video content into small, semantically meaningful chu
 1. **start_sec**: When this semantic unit begins (seconds from VIDEO START, not segment start)
 2. **end_sec**: When this semantic unit ends (must equal next chunk's start_sec)
 3. **summary**: 2-4 sentence narrative description of what happens
-4. **audio_description**: EXHAUSTIVE workflow description (see below)
+4. **workflow_audio_description**: See below
 
-## audio_description Requirements
+## workflow_audio_description
 
-The audio_description must enable someone to REPLICATE THE EXACT WORKFLOW without watching the video. Focus on what is being shown and done, not on people or emotions.
+This field captures workflow information when a screen is being shared, and a workflow is being shown.
 
-**SCREEN CONTENT**:
-- Current application/website and page/view name
-- Complete UI layout: sidebars, panels, tabs, toolbars, menus
-- ALL readable text: headers, labels, buttons, field values, data
-- For tables: ALL column headers AND ALL visible row data
-- For forms: ALL field labels AND their current values
-- URLs, file paths, identifiers visible on screen
+**Set to null when**: No screen is being shared, or no workflow is being shown (e.g., just people talking on webcam, a conversation without screen visuals)
 
-**NAVIGATION & ACTIONS** (most critical):
-- Exact sequence of clicks: what element was clicked and where it's located
-- Menu navigation: which menu, which submenu, which item selected
-- Keyboard input: what was typed, keyboard shortcuts used
-- Scrolling: direction and what content comes into view
-- Selections: what was selected, highlighted, or checked
-- Form interactions: fields filled, dropdowns chosen, checkboxes toggled
+**When a screen IS being shared**: Write an EXTREMELY DETAILED tutorial-style description that would enable someone to replicate the exact workflow without watching the video.
 
-**TRANSITIONS**:
-- What screen/page/view appears after each action
-- Loading states and what loads
-- Panels, dialogs, or dropdowns opening/closing
-- Tab switches and their content
+Be verbose and specific. Describe:
+- **Every visible UI element**: application name, page title, sidebar menus, tabs, buttons, toolbars, panels
+- **All readable text**: transcribe headers, labels, button text, menu items, field values, table data, URLs exactly as shown
+- **Each action taken**: "The user clicks the 'Dashboards' item in the left sidebar" - specify what was clicked and where
+- **Every transition**: what appears after each click, loading states, panels opening, data populating, fully describe every state transition
+- **Table contents**: column headers AND the actual data values in visible rows
+- **Form contents**: field labels AND their current values
 
-**DATA & RESULTS**:
-- Search results or filtered data shown
-- Error messages or success confirmations
-- Values that change as a result of actions
+Write in flowing, detailed prose. Imagine you're writing a step-by-step tutorial for someone who cannot see the screen. Include every detail they would need to follow along and perform the same actions.
 
-Write as a step-by-step procedural description. Use numbered steps or clear bullet points. Be specific enough that a reader could perform the identical workflow in the same application.
+Litmus Test: The workflow should be **perfectly reproducible** solely on the basis of your audio description. If someone would struggle to reproduce the workflow solely on the basis of workflow_audio_description, introduce additional detail and precision until it is clear that they would no longer struggle.
 """.strip()
 
 # Output schema for semantic chunks
@@ -151,12 +139,17 @@ SEMANTIC_CHUNKS_SCHEMA: dict[str, Any] = {
                         "type": "string",
                         "description": "2-4 sentence narrative description of this chunk",
                     },
-                    "audio_description": {
-                        "type": "string",
-                        "description": "Step-by-step workflow description enabling replication of shown actions: screen content, navigation, clicks, data values, and transitions",
+                    "workflow_audio_description": {
+                        "type": ["string", "null"],
+                        "description": "Detailed workflow description of screen content and actions - to an extent sufficient for perfect reproducibility - or null if no workflow is being shown",
                     },
                 },
-                "required": ["start_sec", "end_sec", "summary", "audio_description"],
+                "required": [
+                    "start_sec",
+                    "end_sec",
+                    "summary",
+                    "workflow_audio_description",
+                ],
             },
         },
     },
@@ -412,17 +405,6 @@ def analyze_segment(
             CURRENT SEGMENT: {format_timestamp(chunk.start_sec)} to {format_timestamp(chunk.end_sec)} (segment {chunk.index + 1} of {total_chunks})
 
             Analyze this segment and break it into granular semantic chunks.
-
-            Requirements:
-            - Most chunks should be 10-60 seconds
-            - Each chunk = one topic/moment/idea
-            - Timestamps must be in seconds from VIDEO START (not segment start)
-            - summary: 2-4 detailed sentences
-            - audio_description: EXHAUSTIVE visual description for blind users
-              - Transcribe ALL visible text verbatim
-              - Describe ALL UI elements, mouse actions, screen changes
-              - Use categorized bullet points (SCREEN CONTENT, ACTIONS, PEOPLE, TRANSITIONS)
-              - Be extremely verbose (15-30+ bullet points for complex screens)
             """
         ).strip()
     )
