@@ -69,7 +69,10 @@ GEMINI_MODEL = "gemini-3-pro-preview"
 # Default 10 minutes per API call - well under the 45-min limit for video with audio
 DEFAULT_SEGMENT_DURATION_MIN = 10
 
-# System instruction: bias towards granular sub-minute chunks
+# Default frame rate for video sampling (valid range: 0 < fps <= 24.0)
+DEFAULT_FPS = 1.0
+
+# System instruction for semantic chunking
 SYSTEM_INSTRUCTION = """
 You are an expert video analyst creating semantic segmentations of video content.
 
@@ -192,7 +195,7 @@ def require_api_key() -> str:
     return key
 
 
-def run_subprocess(cmd: list[str]) -> subprocess.CompletedProcess:
+def run_subprocess(cmd: list[str]) -> subprocess.CompletedProcess[str]:
     try:
         return subprocess.run(cmd, check=True, capture_output=True, text=True)
     except FileNotFoundError:
@@ -231,7 +234,7 @@ def probe_video(path: Path) -> VideoMetadata:
 def plan_segments(meta: VideoMetadata, segment_duration_sec: int) -> list[Segment]:
     """Plan segments for API calls based on specified duration."""
     if meta.duration_sec <= 0:
-        return [Segment(0, 0, 0)]
+        return []
 
     if meta.duration_sec <= segment_duration_sec:
         return [Segment(0, 0, meta.duration_sec)]
@@ -379,6 +382,7 @@ def analyze_segment(
     total_segments: int,
     prior_chunks: list[dict],
     user_context: str | None,
+    fps: float = DEFAULT_FPS,
     verbose: bool = False,
 ) -> list[dict]:
     """Analyze a video segment and extract semantic chunks."""
@@ -425,6 +429,7 @@ def analyze_segment(
                         "videoMetadata": {
                             "startOffset": {"seconds": int(segment.start_sec)},
                             "endOffset": {"seconds": int(segment.end_sec)},
+                            "fps": fps,
                         },
                     },
                     {"text": prompt},
@@ -516,13 +521,32 @@ def main():
         metavar="MIN",
         help=f"Duration of each analysis segment in minutes (default: {DEFAULT_SEGMENT_DURATION_MIN})",
     )
+    parser.add_argument(
+        "--fps",
+        type=float,
+        default=DEFAULT_FPS,
+        metavar="FPS",
+        help=f"Frame rate for video sampling, range (0, 24.0] (default: {DEFAULT_FPS})",
+    )
     args = parser.parse_args()
 
     if not args.video.exists():
         sys.exit(f"ERROR: Video file not found: {args.video}")
 
+    if args.segment_minutes < 1:
+        sys.exit("ERROR: --segment-minutes must be at least 1")
+
+    if not (0 < args.fps <= 24.0):
+        sys.exit("ERROR: --fps must be in range (0, 24.0]")
+
+    if args.video.suffix.lower() != ".mp4":
+        sys.exit("ERROR: Only .mp4 files are supported")
+
     api_key = require_api_key()
     meta = probe_video(args.video)
+
+    if meta.duration_sec <= 0:
+        sys.exit("ERROR: Could not determine video duration")
 
     eprint(f"Video: {meta.path}")
     eprint(
@@ -566,6 +590,7 @@ def main():
                 total_segments=len(segments),
                 prior_chunks=all_chunks,
                 user_context=args.context,
+                fps=args.fps,
                 verbose=args.verbose,
             )
 
