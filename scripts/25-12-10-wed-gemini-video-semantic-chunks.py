@@ -379,7 +379,7 @@ def call_generate_content(api_key: str, payload: dict) -> dict:
             return resp.json()
 
         if resp.status_code in retryable_status_codes:
-            eprint(f"  [retry] {resp.status_code}: {resp.text[:500]}")
+            eprint(f"  [retry] {resp.status_code}: {resp.text}")
             eprint(f"  [retry] Backing off {backoff:.1f}s...")
             time.sleep(backoff)
             backoff = min(backoff * 2, max_backoff_sec)
@@ -517,7 +517,7 @@ def analyze_segment(
             eprint(f"  [response] Chunks ({len(chunks)}):")
             eprint(indent_lines(json.dumps(chunks, indent=2)))
             eprint()
-            eprint(f"  [response] Segment summary: {segment_summary}...")
+            eprint(f"  [response] Segment summary: {segment_summary}")
         return chunks, segment_summary
     except json.JSONDecodeError:
         eprint("Warning: Failed to parse response as JSON")
