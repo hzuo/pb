@@ -67,7 +67,7 @@ GEMINI_API_BASE = "https://generativelanguage.googleapis.com"
 GEMINI_MODEL = "gemini-3-pro-preview"
 
 # Default 10 minutes per API call - well under the 45-min limit for video with audio
-DEFAULT_CHUNK_DURATION_MIN = 10
+DEFAULT_SEGMENT_DURATION_MIN = 10
 
 # System instruction: bias towards granular sub-minute chunks
 SYSTEM_INSTRUCTION = """
@@ -172,7 +172,7 @@ class VideoMetadata:
 
 
 @dataclass
-class CallChunk:
+class Segment:
     """A segment of video to analyze in a single API call."""
 
     index: int
@@ -228,23 +228,23 @@ def probe_video(path: Path) -> VideoMetadata:
     )
 
 
-def plan_call_chunks(meta: VideoMetadata, chunk_duration_sec: int) -> list[CallChunk]:
+def plan_segments(meta: VideoMetadata, segment_duration_sec: int) -> list[Segment]:
     """Plan segments for API calls based on specified duration."""
     if meta.duration_sec <= 0:
-        return [CallChunk(0, 0, 0)]
+        return [Segment(0, 0, 0)]
 
-    if meta.duration_sec <= chunk_duration_sec:
-        return [CallChunk(0, 0, meta.duration_sec)]
+    if meta.duration_sec <= segment_duration_sec:
+        return [Segment(0, 0, meta.duration_sec)]
 
-    num_chunks = math.ceil(meta.duration_sec / chunk_duration_sec)
+    num_segments = math.ceil(meta.duration_sec / segment_duration_sec)
 
     return [
-        CallChunk(
+        Segment(
             index=i,
-            start_sec=i * chunk_duration_sec,
-            end_sec=min((i + 1) * chunk_duration_sec, meta.duration_sec),
+            start_sec=i * segment_duration_sec,
+            end_sec=min((i + 1) * segment_duration_sec, meta.duration_sec),
         )
-        for i in range(num_chunks)
+        for i in range(num_segments)
     ]
 
 
@@ -375,8 +375,8 @@ def extract_text(resp: dict) -> str:
 def analyze_segment(
     api_key: str,
     file_uri: str,
-    chunk: CallChunk,
-    total_chunks: int,
+    segment: Segment,
+    total_segments: int,
     prior_chunks: list[dict],
     user_context: str | None,
     verbose: bool = False,
@@ -386,7 +386,7 @@ def analyze_segment(
     # Build the user prompt
     prompt_parts = []
 
-    # Rolling context from prior segments
+    # Rolling context from prior chunks
     if prior_chunks:
         # Summarize prior chunks concisely to fit context
         prior_summary = "\n".join(
@@ -402,7 +402,7 @@ def analyze_segment(
     prompt_parts.append(
         textwrap.dedent(
             f"""
-            CURRENT SEGMENT: {format_timestamp(chunk.start_sec)} to {format_timestamp(chunk.end_sec)} (segment {chunk.index + 1} of {total_chunks})
+            CURRENT SEGMENT: {format_timestamp(segment.start_sec)} to {format_timestamp(segment.end_sec)} (segment {segment.index + 1} of {total_segments})
 
             Analyze this segment and break it into granular semantic chunks.
             """
@@ -423,8 +423,8 @@ def analyze_segment(
                     {
                         "fileData": {"fileUri": file_uri, "mimeType": "video/mp4"},
                         "videoMetadata": {
-                            "startOffset": {"seconds": int(chunk.start_sec)},
-                            "endOffset": {"seconds": int(chunk.end_sec)},
+                            "startOffset": {"seconds": int(segment.start_sec)},
+                            "endOffset": {"seconds": int(segment.end_sec)},
                         },
                     },
                     {"text": prompt},
@@ -443,7 +443,7 @@ def analyze_segment(
 
     if verbose:
         eprint(f"\n  [request] Sending to {GEMINI_MODEL}...")
-        eprint(f"  [request] Segment: {chunk.start_sec}s - {chunk.end_sec}s")
+        eprint(f"  [request] Segment: {segment.start_sec}s - {segment.end_sec}s")
         eprint(f"  [request] Prior chunks in context: {len(prior_chunks)}")
 
     resp = call_generate_content(api_key, payload)
@@ -510,11 +510,11 @@ def main():
         help="Verbose output: print requests, responses, and usage metadata to stderr",
     )
     parser.add_argument(
-        "--chunk-minutes",
+        "--segment-minutes",
         type=int,
-        default=DEFAULT_CHUNK_DURATION_MIN,
+        default=DEFAULT_SEGMENT_DURATION_MIN,
         metavar="MIN",
-        help=f"Duration of each analysis segment in minutes (default: {DEFAULT_CHUNK_DURATION_MIN})",
+        help=f"Duration of each analysis segment in minutes (default: {DEFAULT_SEGMENT_DURATION_MIN})",
     )
     args = parser.parse_args()
 
@@ -532,9 +532,9 @@ def main():
     eprint(f"Audio: {meta.has_audio}")
 
     # Plan segments
-    chunk_duration_sec = args.chunk_minutes * 60
-    call_chunks = plan_call_chunks(meta, chunk_duration_sec)
-    eprint(f"\nPlanned {len(call_chunks)} segment(s) of {args.chunk_minutes} min each")
+    segment_duration_sec = args.segment_minutes * 60
+    segments = plan_segments(meta, segment_duration_sec)
+    eprint(f"\nPlanned {len(segments)} segment(s) of {args.segment_minutes} min each")
 
     # Upload video once
     eprint("\nUploading video...")
@@ -550,27 +550,27 @@ def main():
     eprint(f"  Ready: {file_uri}")
 
     # Process each segment with rolling context
-    all_semantic_chunks: list[dict] = []
+    all_chunks: list[dict] = []
 
     try:
-        for chunk in call_chunks:
+        for segment in segments:
             eprint(
-                f"\n=== Segment {chunk.index + 1}/{len(call_chunks)} "
-                f"({format_timestamp(chunk.start_sec)}-{format_timestamp(chunk.end_sec)}) ==="
+                f"\n=== Segment {segment.index + 1}/{len(segments)} "
+                f"({format_timestamp(segment.start_sec)}-{format_timestamp(segment.end_sec)}) ==="
             )
 
-            segment_chunks = analyze_segment(
+            chunks = analyze_segment(
                 api_key=api_key,
                 file_uri=file_uri,
-                chunk=chunk,
-                total_chunks=len(call_chunks),
-                prior_chunks=all_semantic_chunks,
+                segment=segment,
+                total_segments=len(segments),
+                prior_chunks=all_chunks,
                 user_context=args.context,
                 verbose=args.verbose,
             )
 
-            eprint(f"\n  Found {len(segment_chunks)} semantic chunks")
-            all_semantic_chunks.extend(segment_chunks)
+            eprint(f"\n  Found {len(chunks)} semantic chunks")
+            all_chunks.extend(chunks)
 
     finally:
         # Clean up uploaded file
@@ -582,10 +582,10 @@ def main():
 
     # Output results
     eprint(f"\n{'=' * 60}")
-    eprint(f"TOTAL: {len(all_semantic_chunks)} semantic chunks")
+    eprint(f"TOTAL: {len(all_chunks)} semantic chunks")
     eprint(f"{'=' * 60}")
 
-    output_json = json.dumps(all_semantic_chunks, indent=2, ensure_ascii=False)
+    output_json = json.dumps(all_chunks, indent=2, ensure_ascii=False)
 
     if args.output:
         args.output.write_text(output_json, encoding="utf-8")
