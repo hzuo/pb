@@ -96,6 +96,9 @@ healthfit-download:
 mf1:
   uv run --env-file=.env "scripts/25-12-02-tue-stonybrook-notes-01-download.py"
 
+mf11:
+  uv run --env-file=.env "scripts/25-12-10-wed-stonybrook-radiology-01-download.py"
+
 mf2:
   uv run --env-file=.env "scripts/25-12-02-tue-stonybrook-notes-02-convert.py"
 

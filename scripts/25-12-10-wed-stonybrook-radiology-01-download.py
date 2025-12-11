@@ -7,16 +7,16 @@
 # ///
 
 """
-Stony Brook Medicine Patient Portal - Clinical Notes Sync
+Stony Brook Medicine Patient Portal - Radiology Test Results Sync
 
-Connects to Chrome via CDP, scrapes the clinical notes list,
+Connects to Chrome via CDP, scrapes the radiology/test results list,
 downloads any new PDFs, and updates the metadata TSV.
 
 Prerequisites:
 - Chrome running with remote debugging on CDP_PORT
 - User logged into the patient portal
 
-Written by: personalbot02-25-12-02-19-19-47-017948d5-e47d-4c0d-885e-60f8aa3db3d5
+Based on: 25-12-02-tue-stonybrook-notes-01-download.py
 """
 
 import csv
@@ -33,8 +33,8 @@ from playwright.sync_api import sync_playwright
 GIT_ROOT = next(p for p in Path(__file__).resolve().parents if (p / ".git").exists())
 WORKSPACE = (GIT_ROOT / "_scratch" / "mf").resolve()
 CDP_PORT = 9315
-BASE_URL = "https://myhealthelife.stonybrookmedicine.edu/pages/health_record/open_notes"
-TSV_FILENAME = "__index_notes__.tsv"
+BASE_URL = "https://myhealthelife.stonybrookmedicine.edu/pages/health_record/radiology"
+TSV_FILENAME = "__index_radiology__.tsv"
 PDF_BASE_URL = "https://patientportal.myhealthelife.stonybrookmedicine.edu"
 BATCH_SIZE = 50
 
@@ -61,7 +61,7 @@ def load_existing_tsv(tsv_path: Path) -> set[str]:
 
 def collect_all_entries(page) -> list[tuple[str, str]]:
     """
-    Paginate through all notes pages and collect (card_text, href) tuples.
+    Paginate through all radiology pages and collect (card_text, href) tuples.
     Returns list of unique entries.
     """
     entries = []
@@ -184,7 +184,7 @@ def download_pdfs(
                     # Extract filename from Content-Disposition
                     cd = response.headers.get("content-disposition", "")
                     match = re.search(r'filename="([^"]+)"', cd)
-                    cd_filename = match.group(1) if match else f"document_{doc_id}.pdf"
+                    cd_filename = match.group(1) if match else f"radiology_{doc_id}.pdf"
 
                     body = response.body()
 
@@ -284,7 +284,7 @@ def main():
 
     if not new_entries:
         print()
-        print("No new notes to download.")
+        print("No new radiology results to download.")
         return
 
     # Download new PDFs (reverse to process oldest-first for chronological TSV)

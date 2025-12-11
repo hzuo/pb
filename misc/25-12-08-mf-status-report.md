@@ -1888,3 +1888,242 @@ By the end of 12/10, relative to the detailed picture through 12/9:
    - Hypoalbuminemia and mild electrolyte disturbances persist but are expected and monitored.
 
 In sum, as of **12/10/2025**, the patient is **clinically stable with improving laboratory trends** (platelets, liver enzymes) and a **contained chest wall hematoma**, but remains in a **high‑risk tension zone** between bleeding risk (limiting anticoagulation) and significant underlying **thrombotic burden** (DVTs, SVC thrombus, prior embolic strokes, complex IVC filter).
+
+---
+
+## Appendix D – Additional Imaging and Cardiac/Diagnostic Studies (12/5–12/9/2025)
+
+This appendix summarizes key findings from **radiology and cardiac tests performed between 12/5/2025 and 12/9/2025**, with emphasis on:
+
+* Which specific studies were reviewed.
+* Which results are **already incorporated** into the main body or earlier appendices.
+* **New or clarifying details** that were *not* fully captured in the prior narrative.
+
+### D.1 Transesophageal Echocardiogram (TEE) – 12/5/2025
+
+**Study:** TEE Complete, 12/5/2025 13:46 (Accession 12545791).
+
+**Key report findings (direct from the TEE report):**
+
+* **Global function and chamber sizes**
+  * Normal left ventricular size and global systolic function.
+  * **LVEF 60–65% by visual estimation.**
+  * Normal right ventricular size and systolic function.
+
+* **Valves**
+  * Aortic valve: normal trileaflet morphology; **no aortic stenosis**; **trace aortic insufficiency**.
+  * Mitral valve: structurally normal; **trace mitral regurgitation**.
+  * Tricuspid valve: structurally normal; **trace tricuspid regurgitation**.
+  * Pulmonic valve: normal; no vegetations; trace regurgitation at most.
+
+* **Atria, septum, and thrombus/shunt evaluation**
+  * Left atrium and **left atrial appendage (LAA) free of thrombus**.
+  * Atrial septum structurally normal on 2D and color Doppler.
+  * Agitated saline (bubble) study: **no bubbles in the left heart** → **no PFO or intracardiac right‑to‑left shunt detected.**
+
+* **Aorta and pericardium**
+  * **Small, simple plaque** in the descending aorta.
+  * Aortic root diameter normal for body size.
+  * **No pericardial effusion.**
+
+* **Critical catheter finding**
+  * 2D/3D imaging shows a **mobile echodensity on the tip of the SVC catheter**, measuring about **0.7 × 0.8 cm**, described as “**vegetation vs thrombus**.”
+  * Report specifically recommends **clinical correlation and consideration of dedicated vascular imaging.**
+
+**How this relates to the main report:**
+
+* Section **9.1 (TEE – 12/5/2025)** already captures the *substance* of these findings:
+  * Normal biventricular function and EF ~60–65%.
+  * No atrial/LAA thrombus, no PFO/right‑to‑left shunt.
+  * No left‑sided valvular vegetations/endocarditis.
+  * Presence of a small mobile mass on the SVC catheter tip (thrombus vs vegetation).
+* The original TEE report **fully supports and refines** that summary; there are **no discrepant or additional pathologic findings** beyond what is already described.
+
+---
+
+### D.2 Venous Duplex – Right Upper Extremity (R/O DVT) – 12/5/2025
+
+**Study:** Venous Duplex – R/O DVT Right Upper Extremity, 12/5/2025 18:07.
+
+**Key report findings:**
+
+* **Technical quality:**
+  * Study explicitly labeled **“technically difficult/limited”** due to patient positioning and bandaging.
+  * **Proximal and mid right subclavian vein** segments are **non‑visualized**.
+
+* **Visualized venous segments (all right‑sided):**
+  * Innominate vein, internal jugular vein (prox/mid/distal), **distal subclavian**, axillary, brachial (prox/mid/distal), radial (prox/mid/distal), ulnar (prox/mid/distal), cephalic, and basilic veins.
+  * All of these segments demonstrate **complete compressibility** and are interpreted as **“Normal (Patent)”**.
+
+* **Impression (verbatim essence):**
+  * “No obvious evidence of deep vein thrombosis in portions visualized.”
+  * Because of the non‑visualized subclavian segments and limitations, **DVT cannot be fully excluded** in the non‑visualized proximal/mid subclavian region.
+
+**Relation to the status report:**
+
+* Section **9.2** already describes this study as **technically limited**, with **no DVT in the visualized segments**, and emphasizes that clot cannot be excluded in the non‑visualized subclavian/SVC territory.
+* The full report reinforces that description; there is **no additional positive finding** (no confirmed right‑arm DVT).
+
+---
+
+### D.3 CT Venogram Chest with IV Contrast – 12/6/2025 (Reported 12/7)
+
+**Study:** CT Venogram Chest with IV Contrast, 12/6/2025 15:44 (Accession 12554095).
+
+**Key report findings:**
+
+* **Lungs and pleura**
+  * Lungs **clear**; **no effusion** and no pneumothorax.
+
+* **Central veins and IVC filter**
+  * **Right‑sided tunneled central venous catheter** with tip terminating in the **SVC**.
+  * **“No CT evidence of sizable discernible catheter associated thrombus”** at the catheter tip.
+  * **Tilted suprarenal IVC filter** with **multiple struts extending beyond the IVC lumen.**
+
+* **Incidental vascular finding – *not previously called out in the status report***
+  * A **6 mm calcified splenic artery aneurysm** is described (“calcified splenic artery aneurysm measuring 6 mm”).
+  * This is a **small, calcified, incidental aneurysm** in the splenic artery; no associated acute complication is reported.
+
+* **Upper abdomen**
+  * **Diffuse hepatic steatosis**.
+
+**How this relates to the main report:**
+
+* Sections **9.3** and **A.3** already incorporate almost all of this CT venogram’s clinically relevant content:
+  * Confirmation that the **SVC catheter tip appears free of sizable CT‑visible thrombus** (in contrast to the small mobile mass seen by TEE).
+  * Documentation of the **tilted suprarenal IVC filter with struts extending beyond the IVC**, prompting IR/vascular surgery consideration.
+  * Recognition of **diffuse hepatic steatosis** in the upper abdomen.
+* **New detail added here:**
+  * The **calcified 6 mm splenic artery aneurysm** was **not previously mentioned** in the status report.
+    * It is a small, likely chronic, **incidental vascular finding**, without any reported rupture, ischemia, or direct link to current symptoms.
+    * It does, however, mean she has at least one **documented splanchnic arterial aneurysm** on imaging, which may be worth awareness in long‑term vascular follow‑up even if not actionable acutely.
+
+---
+
+### D.4 Chest X‑rays (AP Portable) – 12/7/2025 and 12/8/2025
+
+#### 12/7/2025 – Chest, AP Portable
+
+* **Findings:**
+  * Tunneled right IJ catheter tip in the SVC, stable.
+  * No pulmonary vascular congestion.
+  * **No focal consolidation; no effusion seen** (left costophrenic angle partially excluded).
+  * No pneumothorax; mediastinum and bones without acute abnormality.
+* **Impression:**
+  * “No definitive focal consolidation to suggest pneumonia radiographically.”
+
+This exactly matches the summary already provided in **§9.4** (12/7 CXR: no definite focal consolidation).
+
+#### 12/8/2025 – Chest, AP Portable
+
+* **Findings:**
+  * Tunneled right IJ catheter tip over the **mid–distal SVC** (appropriately positioned).
+  * **Blunting of the right costophrenic angle with adjacent hazy opacity**, read as **trace right pleural effusion with likely atelectasis.**
+  * No pulmonary vascular congestion; no pneumothorax.
+  * “Likely swollen right upper extremity,” though soft‑tissue assessment is limited on plain film.
+* **Impression:**
+  * Properly positioned tunneled catheter.
+  * **Trace right pleural effusion with hazy opacity**—most consistent with atelectasis, with early infection not fully excludable.
+
+This is already summarized in **§9.4**; the full report mainly adds the explicit
+characterization of the catheter tip position (mid–distal SVC) and reiterates the suggestion of mild right‑sided soft‑tissue swelling.
+
+---
+
+### D.5 CT Chest with IV Contrast – 12/8/2025
+
+**Study:** CT Chest with IV Contrast (“CT:Chest W/non‑ionic Contrast”), 12/8/2025 14:53 (Accession 12555699).
+
+**Key report findings (brief recap):**
+
+* **Large right subpectoral hematoma**
+  * Approximate dimensions **7.7 × 7.6 × 5.1 cm** in the right subpectoral space, along the tunneled catheter course.
+  * **Layering hyperdensity** consistent with blood products.
+  * **No CT evidence of active contrast extravasation.**
+  * **Right subclavian artery and vein appear patent.**
+
+* **Pulmonary parenchyma**
+  * **Patchy airspace opacities in the anterior portions of both upper lobes**, for which the radiologist explicitly says to **“correlate for pneumonia.”**
+  * Basilar linear opacities interpreted as **atelectasis/scarring**.
+  * No pleural effusion, pleural mass, or pneumothorax.
+
+* **Upper abdomen**
+  * **CBD stent** in place.
+  * **Pneumobilia** (expected after sphincterotomy/stenting).
+  * **Gallbladder sludge/stones** (high‑density material at the gallbladder base).
+  * **IVC filter legs abutting the portal vein**, again emphasizing the malposition/extra‑caval extension of struts.
+
+These elements have already been thoroughly incorporated in **Appendix A** and **§10.2** of the main report. The full radiology text largely confirms the previous synthesis; there are **no contradictory or additional major findings** beyond what is already summarized.
+
+---
+
+### D.6 Venous Duplex – Bilateral Lower Extremities (R/O DVT) – 12/9/2025
+
+**Study:** Venous Duplex – R/O DVT Bilateral Lower Extremities, 12/9/2025 10:02.
+
+**Key report findings:**
+
+* **Right leg:**
+  * External iliac, common femoral, deep femoral (proximal), femoral (prox/mid/distal), popliteal (prox/distal), gastrocnemius, posterior tibial, peroneal, and soleal veins are all **completely compressible and patent**, with impressions recorded as **“Normal (Patent)”**.
+  * **Impression:** **No evidence of thrombus** in the right lower extremity.
+
+* **Left leg:**
+  * External iliac, common femoral, deep femoral, femoral (prox/mid/distal), popliteal (prox/distal), gastrocnemius, posterior tibial, and peroneal veins are **all patent and fully compressible**.
+  * **Left soleal vein:** non‑compressible, with impression **“Acute thrombus”**.
+
+* **Formal conclusion/impression:**
+  * **Right:** no evidence of DVT or reflux.
+  * **Left:** **acute thrombus confined to the soleal vein**; all other imaged deep veins are negative for DVT.
+
+**Relation to the status report:**
+
+* The main report already states that she has **acute DVTs involving the left subclavian vein and the left soleal vein**, and notes the absence of additional LE DVTs on subsequent imaging.
+* This duplex provides **definitive confirmation that the lower‑extremity thrombus burden is limited to an isolated left soleal DVT**, with the **entire right leg and all other left‑leg deep veins patent**. That nuance (right leg fully clear on 12/9) is implicit in the narrative but is made explicit here.
+
+---
+
+### D.7 Recent EKG Interpretations (12/7 and 12/8, Interpreted 12/9)
+
+There are **two EKG interpretation reports** dated 12/9/2025, corresponding to **tracings on 12/7 and 12/8**.
+
+#### 12/7/2025 EKG (interpreted 12/9)
+
+* **Rhythm:** Normal sinus rhythm.
+* **Overall interpretation:** **Normal ECG.**
+* **Comparison:**
+  * When compared with the ECG from **11/24/2025 11:25**, the report notes:
+    * “**Nonspecific T wave abnormality no longer evident in anterior leads.**”
+
+#### 12/8/2025 EKG (interpreted 12/9)
+
+* **Rhythm:** Normal sinus rhythm.
+* **Overall interpretation:** **Normal ECG.**
+* **Comparison:**
+  * When compared with the ECG of **12/7/2025 18:26**, the report states:
+    * **No significant change** was found.
+
+**Relation to the status report:**
+
+* The main report mentions EKG as part of the dyspnea work‑up but **does not explicitly document that the most recent ECGs are normal**.
+* These two reports together show that:
+  * Her **recent EKGs are normal sinus rhythm with no acute ischemic changes**, and
+  * A previously described **nonspecific T‑wave abnormality in the anterior leads (11/24)** had **resolved by 12/7**, with **stable normal tracings by 12/8**.
+* This provides **additional reassurance** regarding current cardiac electrical stability and supports the conclusion that her strokes are **embolic from venous/catheter sources**, rather than driven by an acute coronary/arrhythmic event evident on ECG.
+
+---
+
+### D.8 Overall Synthesis of New vs Confirmatory Information
+
+Across these late‑hospitalization studies (12/5–12/9):
+
+* Most imaging findings **validate and refine** what is already in the main status report:
+  * TEE confirms **no intracardiac thrombus, no PFO/shunt, no valvular endocarditis**, and documents the **SVC catheter tip mass**.
+  * CT venogram chest and CT chest both reinforce the picture of a **tilted suprarenal IVC filter with extra‑caval struts**, **hepatic steatosis**, and **no large CT‑visible catheter‑tip thrombus**, while CT chest additionally defines the **large right subpectoral hematoma** and **possible pneumonia‑like upper‑lobe opacities**.
+  * CXR studies agree with the CT findings (no major consolidation, only trace effusion/atelectasis).
+  * Venous duplex imaging shows that her **current lower‑extremity thrombus burden is confined to an acute left soleal DVT**, with the **right leg veins patent**.
+
+* There are **two genuinely new or previously under‑emphasized points** that are now explicitly documented:
+  1. **Small (≈6 mm) calcified splenic artery aneurysm** on CT venogram chest – an incidental, likely chronic vascular finding that was not mentioned earlier.
+  2. **Latest EKGs (12/7 and 12/8)** show **normal sinus rhythm and normal ECGs**, with **resolution of prior nonspecific T‑wave abnormalities** in the anterior leads, providing additional reassurance against an acute coronary/arrhythmic driver of her recent events.
+
+These additions slightly broaden the vascular and cardiac context, but they **do not materially alter** the primary narrative of her current hospitalization: a complex interplay of **short‑gut/TPN dependence, recurrent line infections, catheter/IVC‑filter–associated thrombosis, embolic cortical strokes, severe but improving thrombocytopenia and DILI, and a large right chest wall hematoma constraining anticoagulation.**
