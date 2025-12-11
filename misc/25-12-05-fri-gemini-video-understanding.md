@@ -95,7 +95,9 @@ curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-previ
 
 ## Maximally complex REST API example with all parameters
 
-This example demonstrates every available configuration option for video understanding:
+This example demonstrates every available configuration option for video understanding.
+
+> **Note on defaults:** Many parameters below match Gemini 3 Pro's defaults and don't need to be passed explicitly. See Part 3 for the full defaults table. In practice, you only need to pass `responseMimeType` and `responseJsonSchema` for JSON output — the model's defaults for `temperature` (1.0), `topK` (64), `thinkingLevel` (HIGH), etc. are already optimal.
 
 ```bash
 curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=${GEMINI_API_KEY}" \
@@ -132,9 +134,9 @@ curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-previ
       }]
     },
     "generationConfig": {
-      "temperature": 0.7,
-      "topP": 0.9,
-      "topK": 40,
+      "temperature": 1.0,
+      "topP": 0.95,
+      "topK": 64,
       "candidateCount": 1,
       "maxOutputTokens": 8192,
       "stopSequences": ["[END ANALYSIS]"],
@@ -212,7 +214,7 @@ curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-previ
 | `videoMetadata.fps`         | Frame sampling rate      | Float (default: 1.0)                                                       |
 | `mediaResolution`           | Quality/token tradeoff   | `MEDIA_RESOLUTION_LOW`, `MEDIA_RESOLUTION_MEDIUM`, `MEDIA_RESOLUTION_HIGH` |
 | `responseMimeType`          | Output format            | `text/plain`, `application/json`                                           |
-| `responseSchema`            | Structured output schema | JSON Schema object                                                         |
+| `responseJsonSchema`        | Structured output schema | JSON Schema object                                                         |
 
 ---
 
@@ -292,7 +294,7 @@ Gemini 3 Pro accepts these video formats: `video/mp4`, `video/mpeg`, `video/mov`
 
 Gemini 3 Pro represents the current frontier of AI video understanding, with benchmark scores that substantially exceed both previous Gemini versions and competitors. The **87.6% Video-MMMU score** and **24-point advantage** on hour-long video comprehension translate to practical capabilities: analyzing security footage, generating video summaries, understanding tutorials, and extracting structured data from video content.
 
-For developers, the most impactful changes are the high-frame-rate processing mode for capturing fast action, the four-tier `media_resolution` parameter for cost optimization, and the continued support for processing up to 10 videos simultaneously with YouTube URL compatibility. The REST API structure remains consistent with Gemini 2.5, making migration straightforward—the primary change is simply updating the model identifier to `gemini-3-pro`.
+For developers, the most impactful changes are the high-frame-rate processing mode for capturing fast action, the four-tier `media_resolution` parameter for cost optimization, and the continued support for processing up to 10 videos simultaneously with YouTube URL compatibility. The REST API structure remains consistent with Gemini 2.5, making migration straightforward—the primary change is simply updating the model identifier to `gemini-3-pro-preview` (or `gemini-3-pro` once it exits preview).
 
 ---
 
@@ -300,17 +302,18 @@ For developers, the most impactful changes are the high-frame-rate processing mo
 
 Here’s the core idea: Gemini 3 Pro gives you a ~1M token context window and can directly “watch” video, but a single request is still capped to ~45 minutes of video with audio, ~1 hour without, and 2 GB per file via the Files API. For _hours_-long MP4s you need to:
 
-- **Probe & slice** the video into safe-length chunks (I use ~20 min by default, well under the 45 min limit and away from the extreme edge of the context window).
-- **Upload each chunk** via the Files API (`media.upload` → `files.get`) and wait for `state == ACTIVE`.
-- **Analyze each chunk** with `gemini-3-pro-preview:generateContent`, asking for structured JSON so the script can stitch everything back together.
-- **Aggregate across chunks** in a final text-only call that consumes all the chunk summaries in the 1M-token window.
+- **Probe** the video to get duration and plan logical chunks (~20 min by default, well under the 45 min limit).
+- **Upload once** via the Files API and wait for `state == ACTIVE`.
+- **Analyze each chunk** with `gemini-3-pro-preview:generateContent`, using `videoMetadata.startOffset/endOffset` to slice server-side (no re-uploading).
+- **Aggregate across chunks** in a final text-only call that consumes all the chunk summaries.
 
 The script below implements exactly that, with:
 
-- ffprobe/ffmpeg-based slicing
+- ffprobe for video metadata, ffmpeg only as fallback for >2GB files
 - Files API resumable upload via **pure `requests`**
+- **Upload-once + API-side slicing** via `videoMetadata.startOffset/endOffset`
 - A **map → (optional rolling context) → reduce** pattern over chunks
-- All the important **knobs** exposed at the top: model ID, chunk size, media resolution, sampling params, JSON mode, etc.
+- All the important **knobs** exposed at the top: model ID, chunk size, media resolution, sampling params, etc.
 
 ---
 
@@ -324,6 +327,21 @@ Save this as e.g. `gemini_video_analyzer.py` and run with `uv run gemini_video_a
 > - `uv` installed
 > - `ffmpeg` and `ffprobe` available on `$PATH`
 > - A Gemini API key from Google AI Studio in `GEMINI_API_KEY`
+
+**Usage:**
+```bash
+# Analyze a video
+uv run gemini_video_analyzer.py video.mp4
+
+# Use independent chunk strategy (no rolling context)
+uv run gemini_video_analyzer.py video.mp4 --strategy independent
+
+# Clean up remote files (if you hit storage limits)
+uv run gemini_video_analyzer.py --gc
+
+# List remote files without deleting (dry run)
+uv run gemini_video_analyzer.py --gc-dry-run
+```
 
 ```python
 # /// script
@@ -402,29 +420,21 @@ TOKENS_PER_FRAME_DEFAULT = 70
 DEFAULT_FPS = 1.0
 
 # ---- Generation config -----------------------------------------------------
-# All the sampling/output knobs in one place.
+# Gemini 3 Pro has good defaults - only override what's necessary.
+#
+# DEFAULT VALUES (do not pass these explicitly):
+#   temperature: 1.0      - Required for reasoning; lower = broken
+#   topP: 0.95            - Standard nucleus sampling
+#   topK: 64              - Gemini 3 Pro default (was 40 in older models)
+#   maxOutputTokens: 65536 - Full capacity
+#   thinkingLevel: HIGH   - Required for complex analysis
+#   mediaResolution: MEDIUM (for video) - 70 tokens/frame at 1fps
+#   candidateCount: 1     - Only 1 supported for thinking models
+#
+# We ONLY pass non-defaults here:
 GENERATION_CONFIG: dict[str, Any] = {
-    # Sampling / decoding
-    "temperature": 0.4,          # lower = more deterministic
-    "topP": 0.9,
-    "topK": 32,
-    "candidateCount": 1,
-
-    # Length / stopping
-    "maxOutputTokens": 4096,
-    "stopSequences": [],         # e.g. ["[END]"]
-
-    # Output format - JSON mode with schema enforcement
+    # JSON mode with schema enforcement (not default)
     "responseMimeType": "application/json",
-
-    # Media handling
-    # Options: MEDIA_RESOLUTION_UNSPECIFIED / LOW / MEDIUM / HIGH
-    "mediaResolution": "MEDIA_RESOLUTION_MEDIUM",
-
-    # Optional penalties & determinism (uncomment to use):
-    # "presencePenalty": 0.0,
-    # "frequencyPenalty": 0.0,
-    # "seed": 42,
 }
 
 # Safety settings (optional). Leaving empty uses model defaults.
@@ -587,6 +597,65 @@ def plan_chunks(meta: VideoMetadata) -> list[ChunkPlan]:
 # FILES API
 # ============================================================================
 
+def delete_remote_file(api_key: str, file_name: str) -> None:
+    """Delete a file from Gemini storage to free up quota (20GB limit per project)."""
+    # file_name is like "files/abc-123", we need just the ID part for the URL
+    url = f"{GEMINI_API_BASE}/v1beta/{file_name}"
+    resp = requests.delete(url, headers={"x-goog-api-key": api_key}, timeout=30)
+    # 200 = deleted, 404 = already gone (both are fine)
+    if resp.status_code not in (200, 404):
+        print(f"  [cleanup] Warning: Failed to delete {file_name}: {resp.status_code}")
+
+
+def list_remote_files(api_key: str) -> list[dict]:
+    """List all files in the project (paginated)."""
+    files = []
+    params = {"pageSize": 100}
+    while True:
+        resp = requests.get(
+            f"{GEMINI_API_BASE}/v1beta/files",
+            headers={"x-goog-api-key": api_key},
+            params=params,
+            timeout=30,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        files.extend(data.get("files", []))
+        if "nextPageToken" not in data:
+            break
+        params["pageToken"] = data["nextPageToken"]
+    return files
+
+
+def garbage_collect(api_key: str, dry_run: bool = False) -> None:
+    """List and delete all files in the project to free up storage."""
+    print("Fetching file list...")
+    files = list_remote_files(api_key)
+    
+    if not files:
+        print("No files found. Storage is clean.")
+        return
+    
+    print(f"Found {len(files)} file(s):")
+    for f in files:
+        name = f.get("name", "unknown")
+        display = f.get("displayName", "unnamed")
+        size = int(f.get("sizeBytes", 0)) / 1024 / 1024
+        print(f"  {name} ({display}) - {size:.1f} MB")
+    
+    if dry_run:
+        print("\nDry run - no files deleted.")
+        return
+    
+    print("\nDeleting all files...")
+    for f in files:
+        name = f.get("name")
+        if name:
+            delete_remote_file(api_key, name)
+            print(f"  Deleted: {name}")
+    print("Done.")
+
+
 def upload_file(api_key: str, path: Path, mime_type: str = "video/mp4",
                 display_name: Optional[str] = None) -> dict:
     """Upload via resumable upload protocol."""
@@ -742,7 +811,6 @@ def aggregate_chunks(api_key: str, chunk_results: list[dict]) -> dict:
     """Final aggregation pass over all chunk summaries."""
 
     config = dict(GENERATION_CONFIG)
-    config["maxOutputTokens"] = 8192
     config["responseJsonSchema"] = FINAL_SUMMARY_SCHEMA
 
     prompt = f"""Here are the analyses of each chunk of a long video:
@@ -780,20 +848,86 @@ Produce a coherent overall summary:
 # FALLBACK: PHYSICAL CHUNKING FOR >2GB FILES
 # ============================================================================
 
+def get_keyframe_timestamps(path: Path) -> list[float]:
+    """Get all keyframe (I-frame) timestamps from video using ffprobe."""
+    cmd = [
+        FFPROBE_BIN, "-v", "error",
+        "-select_streams", "v:0",
+        "-show_entries", "packet=pts_time,flags",
+        "-of", "csv=print_section=0",
+        str(path)
+    ]
+    result = run_subprocess(cmd)
+    
+    keyframes = []
+    for line in result.stdout.strip().split("\n"):
+        if ",K" in line:  # K flag indicates keyframe
+            pts_time = line.split(",")[0]
+            try:
+                keyframes.append(float(pts_time))
+            except ValueError:
+                pass
+    return sorted(keyframes)
+
+
+def snap_to_keyframe(target: float, keyframes: list[float], mode: str) -> float:
+    """
+    Snap a timestamp to the nearest keyframe for clean stream-copy cuts.
+    
+    mode='start': snap to keyframe AT or BEFORE target (include overlap at start)
+    mode='end': snap to keyframe AT or AFTER target (include overlap at end)
+    
+    This ensures no content is lost - chunks will have slight overlap rather than gaps.
+    """
+    if not keyframes:
+        return target
+    
+    if mode == "start":
+        # Find largest keyframe <= target
+        candidates = [kf for kf in keyframes if kf <= target]
+        return candidates[-1] if candidates else keyframes[0]
+    else:  # mode == "end"
+        # Find smallest keyframe >= target
+        candidates = [kf for kf in keyframes if kf >= target]
+        return candidates[0] if candidates else keyframes[-1]
+
+
 def split_video_ffmpeg(meta: VideoMetadata, chunks: list[ChunkPlan],
                        out_dir: Path) -> list[Path]:
-    """Physical chunking via ffmpeg - only for files > 2GB."""
+    """
+    Physical chunking via ffmpeg - only for files > 2GB.
+    
+    Uses keyframe-aligned stream copy: fast, lossless, with slight overlap
+    between chunks (better than gaps from arbitrary cuts).
+    """
+    # Get keyframes once for the whole video
+    print("  [ffmpeg] Scanning keyframes...")
+    keyframes = get_keyframe_timestamps(meta.path)
+    if keyframes:
+        avg_interval = (keyframes[-1] - keyframes[0]) / len(keyframes) if len(keyframes) > 1 else 0
+        print(f"  [ffmpeg] Found {len(keyframes)} keyframes (avg interval: {avg_interval:.1f}s)")
+    else:
+        print("  [ffmpeg] Warning: No keyframes found, cuts may be imprecise")
+    
     paths = []
     for chunk in chunks:
+        # Snap to keyframes: start snaps earlier, end snaps later (overlap, not gaps)
+        aligned_start = snap_to_keyframe(chunk.start_sec, keyframes, "start")
+        aligned_end = snap_to_keyframe(chunk.end_sec, keyframes, "end")
+        duration = aligned_end - aligned_start
+        
+        if keyframes:
+            print(f"  [ffmpeg] Chunk {chunk.index}: {chunk.start_sec:.1f}s→{aligned_start:.1f}s, "
+                  f"{chunk.end_sec:.1f}s→{aligned_end:.1f}s (aligned to keyframes)")
+        
         out_path = out_dir / f"{meta.path.stem}_chunk{chunk.index:03d}.mp4"
         cmd = [
             FFMPEG_BIN, "-y", "-hide_banner", "-loglevel", "error",
-            "-ss", f"{chunk.start_sec:.3f}",
-            "-t", f"{chunk.end_sec - chunk.start_sec:.3f}",
+            "-ss", f"{aligned_start:.3f}",
+            "-t", f"{duration:.3f}",
             "-i", str(meta.path),
             "-c", "copy", str(out_path),
         ]
-        print(f"  [ffmpeg] Creating chunk {chunk.index}")
         run_subprocess(cmd)
         paths.append(out_path)
     return paths
@@ -805,16 +939,35 @@ def split_video_ffmpeg(meta: VideoMetadata, chunks: list[ChunkPlan],
 
 def main():
     parser = argparse.ArgumentParser(description="Analyze long videos with Gemini 3 Pro")
-    parser.add_argument("video", type=Path, help="Path to video file")
+    parser.add_argument("video", type=Path, nargs="?", help="Path to video file")
     parser.add_argument(
         "--strategy",
         choices=["independent", "rolling"],
         default=VIDEO_CHUNK_STRATEGY,
         help="Chunk strategy: 'independent' or 'rolling' context (default: rolling)",
     )
+    parser.add_argument(
+        "--gc",
+        action="store_true",
+        help="Garbage collect: list and delete all remote files to free storage",
+    )
+    parser.add_argument(
+        "--gc-dry-run",
+        action="store_true",
+        help="List remote files without deleting (dry run)",
+    )
     args = parser.parse_args()
 
     api_key = require_api_key()
+    
+    # Handle garbage collection mode
+    if args.gc or args.gc_dry_run:
+        garbage_collect(api_key, dry_run=args.gc_dry_run)
+        return
+    
+    if not args.video:
+        parser.error("video is required unless using --gc")
+    
     meta = probe_video(args.video)
 
     print(f"Video: {meta.path}")
@@ -841,15 +994,20 @@ def main():
                 print(f"\n=== Chunk {chunk.index + 1}/{len(chunks)} ===")
                 file_obj = upload_file(api_key, chunk_path,
                                        display_name=f"{meta.path.name} [chunk {chunk.index}]")
-                file_obj = wait_for_active(api_key, file_obj)
-
-                result = analyze_chunk(
-                    api_key, get_file_uri(file_obj), chunk, len(chunks),
-                    running_summary if args.strategy == "rolling" else None
-                )
-                chunk_results.append(result)
-                if args.strategy == "rolling":
-                    running_summary = result.get("running_summary", running_summary)
+                try:
+                    file_obj = wait_for_active(api_key, file_obj)
+                    result = analyze_chunk(
+                        api_key, get_file_uri(file_obj), chunk, len(chunks),
+                        running_summary if args.strategy == "rolling" else None
+                    )
+                    chunk_results.append(result)
+                    if args.strategy == "rolling":
+                        running_summary = result.get("running_summary", running_summary)
+                finally:
+                    # Clean up immediately to avoid hitting 20GB storage limit
+                    if file_obj and file_obj.get("name"):
+                        print(f"  [cleanup] Deleting {file_obj['name']}...")
+                        delete_remote_file(api_key, file_obj["name"])
     else:
         # Preferred path: upload once, slice via API
         print(f"\nUploading video (once)...")
@@ -861,16 +1019,22 @@ def main():
         chunk_results = []
         running_summary = None
 
-        for chunk in chunks:
-            print(f"\n=== Chunk {chunk.index + 1}/{len(chunks)} "
-                  f"({chunk.start_sec:.0f}s-{chunk.end_sec:.0f}s) ===")
-            result = analyze_chunk(
-                api_key, file_uri, chunk, len(chunks),
-                running_summary if args.strategy == "rolling" else None
-            )
-            chunk_results.append(result)
-            if args.strategy == "rolling":
-                running_summary = result.get("running_summary", running_summary)
+        try:
+            for chunk in chunks:
+                print(f"\n=== Chunk {chunk.index + 1}/{len(chunks)} "
+                      f"({chunk.start_sec:.0f}s-{chunk.end_sec:.0f}s) ===")
+                result = analyze_chunk(
+                    api_key, file_uri, chunk, len(chunks),
+                    running_summary if args.strategy == "rolling" else None
+                )
+                chunk_results.append(result)
+                if args.strategy == "rolling":
+                    running_summary = result.get("running_summary", running_summary)
+        finally:
+            # Clean up the uploaded file to free storage quota
+            if file_obj and file_obj.get("name"):
+                print(f"\n[cleanup] Deleting {file_obj['name']}...")
+                delete_remote_file(api_key, file_obj["name"])
 
     print("\n=== Aggregating ===")
     final = aggregate_chunks(api_key, chunk_results)
@@ -946,22 +1110,37 @@ This ensures the model returns valid JSON matching the schema, rather than just 
 
 System instructions appear in **one place only** (`systemInstruction.parts[0].text`). The user prompt contains only chunk-specific context and instructions, avoiding token waste from duplication.
 
-### (5) All the knobs surfaced
+### (5) Storage cleanup
 
-The script exposes the important Gemini knobs in one place:
+The Files API has a **20 GB per-project storage limit** (files expire after 48 hours). The script handles this:
 
-- **Model & endpoint**: `GEMINI_MODEL`, `GEMINI_API_BASE`
-- **Generation config** (inside `GENERATION_CONFIG`):
-  - `temperature`, `topP`, `topK`, `candidateCount`
-  - `maxOutputTokens`, `stopSequences`
-  - `responseMimeType` for JSON mode
-  - `mediaResolution` (LOW/MEDIUM/HIGH/UNSPECIFIED) to trade visual detail vs token usage
-  - (commented) `presencePenalty`, `frequencyPenalty`, `seed`
-- **Safety**: `SAFETY_SETTINGS` array for harm categories & thresholds
-- **Chunking**: `TARGET_CHUNK_DURATION_SEC`, `VIDEO_CHUNK_STRATEGY`
-- **Tools**: `FFMPEG_BIN`, `FFPROBE_BIN` for container/custom binary paths
+- **Auto-cleanup**: Files are deleted immediately after analysis via `try/finally`
+- **Manual cleanup**: Run `--gc` to list and delete all remote files
+- **Dry run**: Use `--gc-dry-run` to see what would be deleted
 
-The script is executable as-is, but also readable enough to quickly tweak for specific pipelines (e.g., change the JSON schema, add domain-specific prompts for lecture summarization vs security footage analysis).
+This prevents hitting storage limits when processing many videos.
+
+### (6) All the knobs surfaced
+
+The script uses Gemini 3 Pro's optimal defaults and only overrides what's necessary:
+
+**Defaults (not passed explicitly):**
+- `temperature`: 1.0 — required for reasoning, do not lower
+- `topK`: 64 — Gemini 3 Pro default
+- `topP`: 0.95, `maxOutputTokens`: 65536, `thinkingLevel`: HIGH
+- `mediaResolution`: MEDIUM for video (70 tokens/frame)
+
+**Explicitly configured:**
+- `responseMimeType`: "application/json" — enables JSON mode
+- `responseJsonSchema`: schema object — enforces structured output
+- `SAFETY_SETTINGS`: array for harm categories (empty = use defaults)
+
+**Script-level knobs:**
+- `GEMINI_MODEL`, `GEMINI_API_BASE` — model & endpoint
+- `TARGET_CHUNK_DURATION_SEC`, `VIDEO_CHUNK_STRATEGY` — chunking behavior
+- `FFMPEG_BIN`, `FFPROBE_BIN` — external tool paths
+
+The script is executable as-is, but also readable enough to quickly tweak for specific pipelines (e.g., change the JSON schema, add domain-specific prompts).
 
 ---
 
@@ -1103,20 +1282,56 @@ These recommendations come directly from the Vertex AI documentation:
 
 ---
 
-## Thinking level for video reasoning
+## Gemini 3 Pro default parameters
 
-Gemini 3 Pro introduces a `thinking_level` parameter that controls the depth of internal reasoning before generating a response. This is particularly useful for complex video analysis:
+Gemini 3 Pro has well-tuned defaults. **Do not override them unless necessary** — and especially do not pass values that match the defaults (it's unnecessary and clutters your code).
 
-| Setting | Behavior | Best for |
-|---------|----------|----------|
-| `HIGH` (default) | Maximum reasoning, "Deep Think" mode | Complex cause-and-effect analysis, multi-step logic |
-| `LOW` | Constrained reasoning, faster response | Simple queries, high-throughput batch processing |
+| Parameter | Default | Notes |
+|-----------|---------|-------|
+| `temperature` | **1.0** | Required for reasoning. Lower values break the model. |
+| `topP` | **0.95** | Standard nucleus sampling. |
+| `topK` | **64** | Higher than older models (was 40 in Gemini 1.x/2.x). |
+| `maxOutputTokens` | **65,536** | Full capacity. Don't artificially limit. |
+| `thinkingLevel` | **HIGH** | Required for complex video analysis. |
+| `mediaResolution` | **MEDIUM** (video) | 70 tokens/frame at 1fps. Use HIGH only for reading text in video. |
+| `candidateCount` | **1** | Only value supported for thinking models. |
+
+**Best practice:** Only pass parameters that differ from defaults. For video analysis with JSON output, you typically only need:
+```json
+{
+  "generationConfig": {
+    "responseMimeType": "application/json",
+    "responseJsonSchema": { ... }
+  }
+}
+```
+
+### Why you should NOT change temperature
+
+Unlike older models where lower temperature (0.4-0.7) improved accuracy, **Gemini 3 Pro requires temperature=1.0**. The model's internal reasoning process relies on this entropy to explore solution paths. Lowering it causes:
+- Looping / repetitive outputs
+- Degraded reasoning on complex tasks
+- Significantly worse video understanding
+
+**Do not lower temperature for Gemini 3 Pro. Ever.**
+
+### Why you should NOT change thinkingLevel
+
+For video understanding, `thinkingLevel` must be `HIGH`:
+
+| Setting | Use Case |
+|---------|----------|
+| `HIGH` | **Video analysis, coding, math, complex reasoning** — use this |
+| `LOW` | Simple chat only — do NOT use for video understanding |
+
+`LOW` disables the chain-of-thought reasoning that makes Gemini 3 Pro effective at understanding cause-and-effect in video. Using `LOW` for video analysis will produce shallow, low-quality results.
 
 Example usage in `generationConfig`:
 
 ```json
 {
   "generationConfig": {
+    "temperature": 1.0,
     "thinkingConfig": {
       "thinkingLevel": "HIGH"
     },
@@ -1125,7 +1340,9 @@ Example usage in `generationConfig`:
 }
 ```
 
-When analyzing complex videos (e.g., "Why did the car crash?" or "Explain the physics of this golf swing"), `HIGH` enables the model to trace cause-and-effect relationships in the visual timeline rather than just describing what happened.
+When analyzing complex videos (e.g., "Why did the car crash?" or "Explain the physics of this golf swing"), `HIGH` enables the model to reason through cause-and-effect relationships in the visual timeline rather than just describing what happened.
+
+**Note:** `thinkingLevel: HIGH` is different from "Deep Think" mode (a separate consumer feature in Google AI Ultra that uses parallel reasoning and takes minutes to respond). The API's `thinkingLevel` parameter controls sequential chain-of-thought reasoning.
 
 ---
 
