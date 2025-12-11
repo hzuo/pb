@@ -10,8 +10,8 @@
 gemini-video-semantic-chunks.py
 
 Semantically chunk a video using Gemini 3 Pro. The model analyzes the video
-in 15-minute segments and breaks each down into granular sub-minute semantic
-chunks with detailed summaries.
+in configurable segments (default 10 minutes) and breaks each down into
+granular sub-minute semantic chunks with detailed summaries.
 
 Usage:
     uv run gemini-video-semantic-chunks.py video.mp4
@@ -27,7 +27,7 @@ The output is a JSON array of semantic chunks, each with:
 Design notes:
 - Uses Gemini 3 Pro defaults (temperature=1.0, thinkingLevel=HIGH)
 - Only overrides responseMimeType and responseJsonSchema for structured output
-- Rolling context: each 15-min segment receives all prior semantic chunks
+- Rolling context: each segment receives all prior semantic chunks
 - Biases towards granular sub-minute chunks with multiple sentences each
 """
 
@@ -66,8 +66,8 @@ GEMINI_API_KEY_ENV = "GEMINI_API_KEY"
 GEMINI_API_BASE = "https://generativelanguage.googleapis.com"
 GEMINI_MODEL = "gemini-3-pro-preview"
 
-# 15 minutes per API call - well under the 45-min limit for video with audio
-CALL_CHUNK_DURATION_SEC = 15 * 60
+# Default 10 minutes per API call - well under the 45-min limit for video with audio
+DEFAULT_CHUNK_DURATION_MIN = 10
 
 # System instruction: bias towards granular sub-minute chunks
 SYSTEM_INSTRUCTION = """
@@ -228,21 +228,21 @@ def probe_video(path: Path) -> VideoMetadata:
     )
 
 
-def plan_call_chunks(meta: VideoMetadata) -> list[CallChunk]:
-    """Plan 15-minute segments for API calls."""
+def plan_call_chunks(meta: VideoMetadata, chunk_duration_sec: int) -> list[CallChunk]:
+    """Plan segments for API calls based on specified duration."""
     if meta.duration_sec <= 0:
         return [CallChunk(0, 0, 0)]
 
-    if meta.duration_sec <= CALL_CHUNK_DURATION_SEC:
+    if meta.duration_sec <= chunk_duration_sec:
         return [CallChunk(0, 0, meta.duration_sec)]
 
-    num_chunks = math.ceil(meta.duration_sec / CALL_CHUNK_DURATION_SEC)
+    num_chunks = math.ceil(meta.duration_sec / chunk_duration_sec)
 
     return [
         CallChunk(
             index=i,
-            start_sec=i * CALL_CHUNK_DURATION_SEC,
-            end_sec=min((i + 1) * CALL_CHUNK_DURATION_SEC, meta.duration_sec),
+            start_sec=i * chunk_duration_sec,
+            end_sec=min((i + 1) * chunk_duration_sec, meta.duration_sec),
         )
         for i in range(num_chunks)
     ]
@@ -381,7 +381,7 @@ def analyze_segment(
     user_context: str | None,
     verbose: bool = False,
 ) -> list[dict]:
-    """Analyze a 15-minute segment and extract semantic chunks."""
+    """Analyze a video segment and extract semantic chunks."""
 
     # Build the user prompt
     prompt_parts = []
@@ -509,6 +509,13 @@ def main():
         action="store_true",
         help="Verbose output: print requests, responses, and usage metadata to stderr",
     )
+    parser.add_argument(
+        "--chunk-minutes",
+        type=int,
+        default=DEFAULT_CHUNK_DURATION_MIN,
+        metavar="MIN",
+        help=f"Duration of each analysis segment in minutes (default: {DEFAULT_CHUNK_DURATION_MIN})",
+    )
     args = parser.parse_args()
 
     if not args.video.exists():
@@ -525,10 +532,9 @@ def main():
     eprint(f"Audio: {meta.has_audio}")
 
     # Plan segments
-    call_chunks = plan_call_chunks(meta)
-    eprint(
-        f"\nPlanned {len(call_chunks)} segment(s) of {CALL_CHUNK_DURATION_SEC // 60} min each"
-    )
+    chunk_duration_sec = args.chunk_minutes * 60
+    call_chunks = plan_call_chunks(meta, chunk_duration_sec)
+    eprint(f"\nPlanned {len(call_chunks)} segment(s) of {args.chunk_minutes} min each")
 
     # Upload video once
     eprint("\nUploading video...")
