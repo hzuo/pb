@@ -2127,3 +2127,161 @@ Across these late‑hospitalization studies (12/5–12/9):
   2. **Latest EKGs (12/7 and 12/8)** show **normal sinus rhythm and normal ECGs**, with **resolution of prior nonspecific T‑wave abnormalities** in the anterior leads, providing additional reassurance against an acute coronary/arrhythmic driver of her recent events.
 
 These additions slightly broaden the vascular and cardiac context, but they **do not materially alter** the primary narrative of her current hospitalization: a complex interplay of **short‑gut/TPN dependence, recurrent line infections, catheter/IVC‑filter–associated thrombosis, embolic cortical strokes, severe but improving thrombocytopenia and DILI, and a large right chest wall hematoma constraining anticoagulation.**
+
+---
+
+## Appendix E – 12/10–12/11/2025 Updates (ID, General Medicine, Nutrition, CT Head)
+
+This appendix synthesizes **new information** from the following documents:
+
+- **Infectious Disease Progress Note** – 12/10/2025 19:00 EST (signed 22:45) – **Bernadette Maramara, MD**
+- **Nutritional Service Note** – 12/11/2025 08:42 EST – **Emily Sorge, MS, RDN, CDN, CNSC**
+- **General Medicine Progress Note** – 12/11/2025 10:34 EST – **Zaid T. Iqbal, MD**
+- **CT: Head Routine W/o Contrast** – 12/11/2025 14:12 EST (Accession **12564321**) – **Steven West, MD**
+
+### E.1 High‑impact additions / changes (relative to Appendices A–D)
+
+1. **Antibiotics are being stopped.** ID recommends stopping **cefepime** (and **doxycycline**) and signing off; General Medicine documents a plan to **discontinue all antibiotics** and obtain **surveillance blood cultures** after stopping.
+2. **Therapeutic anticoagulation appears to be restarting.** A **heparin infusion** is active/ordered starting **12/10/25 18:24** (600 Units/hr). On 12/11 morning, **aPTT is not yet therapeutic**, and the patient reports **headache**, prompting a **stat CT head**.
+3. **Repeat CT head (12/11) is reassuring.** It shows **evolving known infarcts** with **no hemorrhagic conversion** and **no new intracranial hemorrhage**.
+4. **Marked platelet recovery.** Platelets are now **188 K/µL (12/11)** (previously <50K earlier in the admission), which meaningfully changes bleeding/anticoagulation feasibility.
+5. **Nutrition operations:** patient is **NPO for an IR procedure on 12/11**, but **TPN + SMOFlipid** are documented as running at **goal**, providing **~1387 kcal / 70 g protein / 40 g lipid per day**.
+
+---
+
+### E.2 Infectious Disease Progress Note – 12/10/2025 19:00 EST
+
+#### E.2.1 Clinical status
+
+- **Subjective/ROS:** No acute events overnight; ROS negative (no fever/chills, no respiratory symptoms, no GI symptoms, no neuro symptoms).
+- **Vitals:** T **36.8°C** (Tmax **37.8°C**), HR **86**, RR **17**, BP **122/72**, SpO₂ **99%**. WT **63.6 kg**, HT **170.18 cm** (BMI **21.96**).
+- **Exam highlights:**
+  - Lungs clear; **right arm hematoma and right breast ecchymosis** noted; **no cellulitis** described.
+  - Abdomen soft/non‑tender; **ileostomy without signs of infection**.
+
+#### E.2.2 ID framing of the SVC catheter‑tip echodensity
+
+- ID is following for the **mobile echodensity at the tip of the SVC catheter** (TEE 12/5: “vegetation vs thrombus”) with **no obvious evidence of endocarditis**.
+- ID notes:
+  - **Blood cultures 11/6–12/2 are negative**.
+  - **CT venogram 12/6**: *“No CT evidence of sizable discernible catheter associated thrombus.”*
+  - Patient has already been on extensive antibiotics for prior **line infection / Stenotrophomonas course**, complicated by medication side effects and AKI → infection now felt less likely as the driver of the catheter finding.
+
+#### E.2.3 ID Recommendations (key management change)
+
+- **Stop cefepime and doxycycline.**
+- Because of high baseline risk (tunneled catheter + TPN), **monitor closely** for any new fevers or clinical deterioration.
+- **Repeat blood surveillance cultures** in **3–5 days after stopping antibiotics** to detect breakthrough bacteremia.
+- **Follow‑up TTE in ~2 weeks** to reassess the **SVC thrombus/echnodensity**.
+- **ID Team C signs off**, with instruction to re‑consult if clinical status changes.
+
+#### E.2.4 Labs referenced in the ID note (12/10)
+
+- **CBC:** WBC **11.08 K/µL**, Hgb **8.1 g/dL**, Plt **119 K/µL**.
+- **Coags:** INR **0.9**, aPTT **26.2 sec**.
+- **BMP:** Na **134**, K **4.3**, BUN **10**, Cr **0.49**, Phos **3.0**, Mg **1.5**, Ca **8.1**.
+- **Liver panel:** AST **20**, ALT **67**, Alk Phos **114**, TBili **0.5**, DBili **0.3**, albumin **2.3**.
+
+---
+
+### E.3 General Medicine Progress Note – 12/11/2025 10:34 EST
+
+#### E.3.1 Interval history / new symptoms prompting imaging
+
+- Patient reports **headache** (denies vision loss) and **right forearm pain**.
+- Note states **aPTT is not therapeutic** at the time of evaluation.
+- Plan: **repeat CT head stat**; documented **low suspicion for ICH**, but imaging ordered given stroke history + anticoagulation management.
+
+#### E.3.2 Anticoagulation status and plan (updated)
+
+- Medication/plan sections document an **active/ordered heparin infusion**:
+  - **Heparin 25,000 Units in 250 mL NS** running at **600 Units/hr (6 mL/hr)**.
+  - Order start time documented as **12/10/25 18:24**.
+- **Enoxaparin (Lovenox) prophylaxis** remains listed as **suspended**.
+- **Mechanical prophylaxis:** bilateral calf **SCDs** are in place.
+- Stated plan:
+  - **Continue full‑dose anticoagulation**, maintain **therapeutic anticoagulation for at least 48 hours** without adverse effects, then **transition to Lovenox vs a DOAC**.
+  - **Repeat CT head** on 12/11 (the CT report is summarized in §E.5).
+
+#### E.3.3 Antibiotics / infection plan (updated)
+
+- Gen Med documents: **reviewed ID recommendations today** → **discontinue all antibiotics**.
+- Plan includes:
+  - **Repeat peripheral blood culture in 2–3 days** to rule out bacteremia.
+  - **Monitor for any fevers** while off antibiotics.
+
+#### E.3.4 Updated vitals, I/O, labs (12/11)
+
+- **Vitals (last charted):** T **36.9°C** (12/11 07:19), RR **18**, SpO₂ **97%** on room air. Weight **63.6 kg**.
+- **I/O (24‑hour periods starting 07:00):**
+  - **12/10:** Intake **1901 mL**, Output **300 mL**, Net **+1601 mL**.
+  - **12/09:** Intake **4210 mL**, Output **2250 mL**, Net **+1960 mL**.
+  - **12/11*** partial day: Intake **48 mL**, Output **0 mL**.
+
+- **Key labs (12/11 08:16 unless noted):**
+  - **WBC 14.58 K/µL (↑ leukocytosis)**
+  - **Hgb 8.5 g/dL**, Hct 26.1% (anemia)
+  - **Platelets 188 K/µL** (marked improvement vs prior thrombocytopenia)
+  - Na **134**, K **4.6**, Cl **103**, CO₂ **28**, BUN **13**, Cr **0.48**, anion gap **3**
+  - Ca **7.9**, Phos **3.3**, Mg **1.8**
+  - TBili **0.5**, DBili **0.3**, ALT **47**, AST **18**, Alk Phos **108**, albumin **2.4**
+
+- **aPTT values recorded in the note’s lab table** remain **sub‑therapeutic/near‑normal** (examples shown: **29.5**, **30.1**, **31.6**, and **26.2 sec**), consistent with the interval history statement that anticoagulation was **not yet therapeutic** at that moment.
+
+#### E.3.5 Re‑affirmed problem list elements (not new, but reconfirmed)
+
+- Stroke work‑up recap (CT/CTA 12/1, MRI 12/1, repeat CTs 12/2 and 12/4, TTE bubble 12/2, TEE with catheter‑tip echodensity).
+- CT venogram 12/6 reviewed with IR: **tilted IVC filter with struts beyond IVC**; **no sizable catheter‑tip thrombus**.
+- Chest wall hematoma (CT chest 12/8) improved with pressure dressing.
+- IR recommended IVC filter removal; note states patient **opts to pursue filter removal at a later date**.
+
+---
+
+### E.4 Nutritional Service Note – 12/11/2025 08:42 EST
+
+- **Diet status:** patient is **NPO for an IR procedure on 12/11**; RD recommends resuming **unrestricted diet** as medically feasible.
+- **TPN and lipids:** documented as running at goal:
+  - **TPN – Adult Special Formula:** total volume **1,600 mL/day**, via central line, **67 mL/hr** over **~23.9 hr**.
+  - **SMOFlipid 20%:** **40 g/day** (200 mL) at **16.6 mL/hr** over **12 hr**.
+  - Stated provision: **~1387 kcal/day, 70 g protein/day, 40 g lipids/day**.
+- **Electrolytes/labs (trend shown in note):**
+  - Na **134** (12/11 and 12/10), K **4.6**, Mg **1.8**, Phos **3.3**, Ca **7.9**, Cr **0.48**, BUN **13**, glucose **110**.
+  - RD notes Na is **only slightly low** → monitor before adjusting TPN sodium.
+- **TPN monitoring parameters (re‑stated):**
+  - Daily Chem‑8, Mg, Phos until stable; then 2× weekly.
+  - POC glucose q4h at initiation until stable (goal 70–180), then daily.
+  - Weekly CBC, LFTs, triglycerides, CRP, prealbumin.
+  - Strict I/Os and daily weights.
+
+---
+
+### E.5 CT: Head Routine W/o Contrast – 12/11/2025 14:12 EST
+
+**Study:** CT head without IV contrast (RAPID AI hemorrhage detection used). Comparison: **12/4 CT head** and **12/1 MRI brain DWI/FLAIR**.
+
+**Findings:**
+
+- **Re‑demonstrated evolving infarcts**:
+  - Posterior **left frontal lobe (precentral gyrus)**
+  - **Right parietal lobe (postcentral gyrus)**
+- **No evidence of hemorrhagic conversion.**
+- Infarcts are described as **poorly visualized** on this CT, likely due to **pseudonormalization**.
+- Additional non‑acute findings:
+  - **Mild chronic microvascular ischemic disease**.
+  - **Mild age‑related cerebral and cerebellar volume loss**.
+  - No intracranial hemorrhage or extra‑axial collection.
+  - Calvarium intact.
+  - **Mild ethmoid sinus mucosal thickening**.
+
+**Impression:**
+
+- **Evolving infarcts** of the posterior left frontal lobe and right parietal lobe **without hemorrhagic conversion** (poorly visualized due to pseudonormalization).
+
+---
+
+### E.6 Integrated interpretation (how these updates shift the running picture)
+
+- **Antibiotic strategy:** There is now explicit specialist support (ID) to **stop antibiotics** and monitor clinically, with a defined plan for **surveillance blood cultures** and **repeat echocardiography**.
+- **Thrombosis/bleeding balance:** Platelet recovery (188K) and the decision to **restart/continue therapeutic heparin** suggest the team is pivoting back toward **aggressive anticoagulation** despite the recent chest wall hematoma, while monitoring closely (aPTT not yet therapeutic; CT head obtained for safety).
+- **Neurologic safety check:** The **12/11 CT head** provides reassurance that the known infarcts have **not hemorrhagically transformed** during this phase of anticoagulation management.
+- **Nutrition:** Despite procedural NPO status on 12/11, **TPN + SMOF** remain at goal with standard high‑frequency lab and glucose monitoring.
