@@ -403,6 +403,73 @@ In a real analysis, deep dives revealed:
 3. **Exact file structure**: dispatch_adjustment.csv contained `prior_q_gen_pct_region_5, 0.46`
 4. **Hidden context**: Light load case was commented out in code, only Summer/Winter Peak remained
 
+## Enriching Understanding with Web Research
+
+After completing the video analysis (transcript + chunks + deep dives), you may still have gaps in understanding the **broader context** - industry terminology, why certain processes exist, or how the video's content fits into a larger domain.
+
+Use `helpers.gemini_web_search()` to research domain concepts mentioned in the video.
+
+### When Web Research Helps
+
+| Video gives you... | Web research adds... |
+|--------------------|----------------------|
+| What the narrator does | Why it's done this way in the industry |
+| Domain acronyms (DISIS, ERAS) | Full definitions and official processes |
+| Problems mentioned ("cases won't solve") | Technical explanations of root causes |
+| Workarounds shown | Whether these are standard practice |
+
+### Example: SPP Queue Update Video
+
+After analyzing a video about SPP (Southwest Power Pool) queue updates, web research revealed:
+
+```python
+# Research the interconnection process mentioned
+result = helpers.gemini_web_search(
+    "SPP Southwest Power Pool DISIS generation interconnection queue study process"
+)
+print(result)
+```
+
+**What we learned**:
+- **DISIS** = Definitive Interconnection System Impact Study (cluster-based)
+- The 1,673 withdrawn projects reflect normal attrition at Decision Points
+- SPP is transitioning to a new "CPP" process in 2026
+- The DISIS-2024 cluster was delayed to March 2025 due to backlog
+
+```python
+# Research why Group 5 cases crash
+result = helpers.gemini_web_search(
+    "SPP Texas Panhandle New Mexico weak grid renewable transmission constraints"
+)
+print(result)
+```
+
+**What we learned**:
+- Group 5 (Texas Panhandle/NM) has a "weak grid" problem
+- Massive renewable potential but insufficient transmission to export power
+- $7.7B transmission plan approved, including 765kV line
+- The 46% dispatch scaling isn't a hack - it reflects real physical constraints
+
+### The Synthesis
+
+Web research transforms your understanding:
+
+| Before Research | After Research |
+|-----------------|----------------|
+| "Kate scales dispatch to 46% to make cases solve" | Kate is working around real transmission constraints in one of the most challenging grid regions in the US |
+| "ERAS projects can skip the queue" | ERAS = Expedited Resource Adequacy Study, a fast-track for reliability-critical projects approved by FERC July 2025 |
+| "Group 5 always has problems" | Texas Panhandle has the nation's best renewables but a weak grid - a $7.7B buildout is underway to fix it |
+
+### When to Research
+
+Do web research **after** you've completed the video analysis, when you want to:
+- Understand industry context for domain-specific processes
+- Verify whether workarounds shown are standard practice
+- Learn the "why" behind the "what" shown in the video
+- Connect the video's content to broader industry trends
+
+This step is optional but transforms a video summary into genuine domain understanding.
+
 ## Tips
 
 - **Use chunks as timestamps**: The atlas tells you where to look (e.g., "13:45 - POI changes discussed")
