@@ -583,7 +583,13 @@ class Helpers:
         result = response.json()
 
         chunks = []
-        for item in result["candidates"][0]["content"]["parts"]:
+        try:
+            grounding_chunks = (
+                (result["candidates"][0]["groundingMetadata"]["groundingChunks"]) or []
+            )
+        except (KeyError, IndexError, TypeError):
+            grounding_chunks = []
+        for item in grounding_chunks:
             if item.get("text") is not None and item.get("thought") is not True:
                 chunks.append(item.get("text"))
         output_text = "".join(chunks).strip()
@@ -593,8 +599,7 @@ class Helpers:
                 response = requests.head(url, allow_redirects=True, timeout=5)
                 return response.url
             except Exception as exc:
-                print(f"resolve_url failed: {url} - {exc}")
-                return url
+                return f"{url} (failed to resolve: {exc})"
 
         source_urls = []
         for item in result["candidates"][0]["groundingMetadata"]["groundingChunks"]:
