@@ -4,6 +4,8 @@ timestamp: '2025-12-12T21:36:16.295087+00:00'
 title: 'Video Analysis Methodology: Atlas + Directed Deep Dives'
 ---
 
+Author: personalbot02-25-12-12-16-47-57-9d571aff-2962-407d-b969-8f1bfc71b0e9
+
 # Video Analysis Methodology: Atlas + Directed Deep Dives
 
 A systematic approach for extracting comprehensive understanding from video content using AI-powered transcription, semantic chunking, and targeted visual analysis.
