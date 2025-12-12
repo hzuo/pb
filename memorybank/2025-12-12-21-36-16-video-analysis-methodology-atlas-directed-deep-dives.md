@@ -285,6 +285,9 @@ answer = deep_dive(
     question="""Examine the spreadsheet shown. What are the exact column headers?
     What values appear in the 'Status' column? Be precise."""
 )
+
+# Read the full response - it will be short (typically 200-800 words).
+# Do not truncate. Gemini's answer often contains precise details you asked for.
 print(answer)
 
 # When done, clean up
