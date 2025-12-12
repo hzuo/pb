@@ -582,32 +582,39 @@ class Helpers:
 
         result = response.json()
 
-        chunks = []
+        # Extract text from content parts
+        output_text = ""
         try:
-            grounding_chunks = (
-                (result["candidates"][0]["groundingMetadata"]["groundingChunks"]) or []
-            )
+            parts = result["candidates"][0]["content"]["parts"]
+            for part in parts:
+                # Skip thought parts, only get the actual response
+                if not part.get("thought"):
+                    output_text += part.get("text", "")
         except (KeyError, IndexError, TypeError):
-            grounding_chunks = []
-        for item in grounding_chunks:
-            if item.get("text") is not None and item.get("thought") is not True:
-                chunks.append(item.get("text"))
-        output_text = "".join(chunks).strip()
+            pass
+        output_text = output_text.strip()
 
+        # Extract and resolve source URLs from groundingChunks
         def resolve_url(url: str) -> str:
             try:
-                response = requests.head(url, allow_redirects=True, timeout=5)
-                return response.url
+                resp = requests.head(url, allow_redirects=True, timeout=5)
+                return resp.url
             except Exception as exc:
                 return f"{url} (failed to resolve: {exc})"
 
         source_urls = []
-        for item in result["candidates"][0]["groundingMetadata"]["groundingChunks"]:
-            web = item.get("web")
-            if isinstance(web, dict):
-                url = web.get("uri")
-                if url:
-                    source_urls.append(resolve_url(url))
+        try:
+            grounding_chunks = (
+                result["candidates"][0]["groundingMetadata"]["groundingChunks"] or []
+            )
+            for item in grounding_chunks:
+                web = item.get("web")
+                if isinstance(web, dict):
+                    uri = web.get("uri")
+                    if uri:
+                        source_urls.append(resolve_url(uri))
+        except (KeyError, IndexError, TypeError):
+            pass
 
         if source_urls:
             numbered_sources = [f"{i + 1}. {url}" for i, url in enumerate(source_urls)]
