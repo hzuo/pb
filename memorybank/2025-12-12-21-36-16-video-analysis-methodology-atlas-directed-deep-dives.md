@@ -92,29 +92,71 @@ print(result.stdout)
 
 ### Step 3: Read and Synthesize
 
-Read both outputs thoroughly:
+**This is a critical step. Do not rush it.**
+
+#### Read Both Files IN FULL
+
+Before attempting any deep dives, you MUST read both output files completely:
+
+1. **The transcript markdown** - Every word the narrator said
+2. **The chunks JSON** - Every chunk's summary and workflow_description
+
+**Do not skim. Do not truncate. Do not summarize prematurely.**
+
+| If you skip/skim... | You will... |
+|---------------------|-------------|
+| Parts of transcript | Miss context that explains what's on screen |
+| Parts of chunks JSON | Not know which timestamps to zoom into |
+| workflow_descriptions | Lose the visual context that complements audio |
+| Either file | Ask redundant questions Gemini already answered |
+
+#### Don't Fear Context Limits
+
+These files are typically **well within context limits**:
+- A 30-minute video transcript: ~8,000-15,000 words
+- Chunks JSON for same video: ~30-50 chunks, ~10,000-20,000 words
+
+**This is not a lot of text.** Read it all. Print it all. Do not use `[:1000]` or `head`. Do not ask for summaries of the files - you ARE the one who should be synthesizing.
+
+#### How to Read
 
 ```python
 import json
 
-# Read transcript
+# Read transcript IN FULL - do not truncate
 with open(f"{video_stem}_transcription/{video_stem}_transcript.md") as f:
     transcript = f.read()
+print(transcript)  # Yes, print ALL of it. Read ALL of it.
 
-# Read chunks atlas
+# Read chunks IN FULL - do not truncate
 with open("chunks.json") as f:
     chunks = json.load(f)
 
-# Print chunks overview
-for chunk in chunks:
-    print(f"{chunk['start_timestamp']}-{chunk['end_timestamp']}: {chunk['summary'][:100]}...")
+# Print every chunk - do not limit to first N
+for i, chunk in enumerate(chunks):
+    print(f"\n{'='*60}")
+    print(f"CHUNK {i+1}: {chunk['start_timestamp']} - {chunk['end_timestamp']}")
+    print(f"{'='*60}")
+    print(f"SUMMARY: {chunk['summary']}")
+    print(f"\nWORKFLOW: {chunk['workflow_description']}")
 ```
 
-At this point, you have ~80-90% understanding. Identify gaps:
+#### What Full Reading Gives You
+
+After reading both files in their entirety, you will have:
+- **Mental map** of the entire video's arc
+- **Identified gaps** where transcript and chunks conflict or are vague
+- **Specific timestamps** for deep dive targets
+- **Domain vocabulary** to use in your deep dive questions
+- **Context** to provide Gemini in your directed questions
+
+At this point, you have ~80-90% understanding. Now identify gaps that warrant deep dives:
 - Transcription errors (audio misheard domain terms)
 - Ambiguous references ("offshore" - wind or team?)
 - Exact values you need (file contents, column names)
 - Code structure details
+
+Only after completing this synthesis should you proceed to Step 4.
 
 ### Step 4: Directed Deep Dives
 
