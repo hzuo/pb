@@ -131,7 +131,7 @@ GEMINI_API_BASE = "https://generativelanguage.googleapis.com"
 def upload_video(path):
     """Upload video and return file object."""
     num_bytes = os.path.getsize(path)
-    
+
     # Start resumable upload
     start_resp = requests.post(
         f"{GEMINI_API_BASE}/upload/v1beta/files?key={GEMINI_API_KEY}",
@@ -147,9 +147,9 @@ def upload_video(path):
     )
     start_resp.raise_for_status()
     upload_url = start_resp.headers.get("X-Goog-Upload-Url")
-    
+
     print(f"Uploading {num_bytes / 1024**2:.1f} MB...")
-    
+
     with open(path, "rb") as f:
         upload_resp = requests.post(
             upload_url,
@@ -181,7 +181,7 @@ def wait_for_active(file_obj, poll_sec=5):
 
 def deep_dive(file_uri, start_sec, end_sec, question, fps=1.0):
     """Zoom into specific segment with a directed question."""
-    
+
     payload = {
         "contents": [{
             "parts": [
@@ -200,7 +200,7 @@ def deep_dive(file_uri, start_sec, end_sec, question, fps=1.0):
             "thinkingConfig": {"thinkingLevel": "HIGH"},
         },
     }
-    
+
     resp = requests.post(
         f"{GEMINI_API_BASE}/v1beta/models/gemini-3-pro-preview:generateContent",
         headers={"x-goog-api-key": GEMINI_API_KEY, "Content-Type": "application/json"},
@@ -209,7 +209,7 @@ def deep_dive(file_uri, start_sec, end_sec, question, fps=1.0):
     )
     resp.raise_for_status()
     result = resp.json()
-    
+
     # Extract text (skip thought parts)
     try:
         parts = result["candidates"][0]["content"]["parts"]
@@ -246,6 +246,81 @@ print(answer)
 # When done, clean up
 delete_file(file_obj.get("name"))
 ```
+
+### Providing Context to Gemini
+
+When calling `deep_dive()`, remember that **Gemini only sees the small video segment and your question** - it has no knowledge of the rest of the video, the transcript, or your overall understanding.
+
+**Empathize with the model**: You've read the full transcript and chunks atlas. Gemini hasn't. You need to bridge this gap by providing sufficient context in your question.
+
+#### Bad Question (No Context)
+```python
+answer = deep_dive(
+    file_uri,
+    start_sec=740,
+    end_sec=780,
+    question="What does she say about Claude?"
+)
+```
+Gemini doesn't know who "she" is, what Claude refers to, or why this matters.
+
+#### Good Question (With Context)
+```python
+answer = deep_dive(
+    file_uri,
+    start_sec=740,
+    end_sec=780,
+    question="""This video is a knowledge transfer recording by Kate, an engineer
+explaining the SPP (Southwest Power Pool) queue update workflow. She's walking
+through a Jupyter notebook that processes generator interconnection data.
+
+At this point in the video, she mentions using "Claude" (an AI assistant) to
+help clean up the notebook code.
+
+Please examine this segment and tell me:
+1. What specific code cells or output are visible when she makes this comment?
+2. What exactly looks "redundant" or "repeating" that she's referring to?
+3. What are the variable names visible in the code?
+
+I want to understand what Claude's cleanup produced and what the redundancy looks like."""
+)
+```
+
+#### Context Template
+
+For directed deep dives, structure your question like this:
+
+```
+[BACKGROUND]
+Brief description of the overall video content and narrator.
+
+[LOCAL CONTEXT]
+What's happening at this point based on your atlas/transcript reading.
+
+[SPECIFIC QUESTIONS]
+Numbered list of precise things you want to know.
+
+[PURPOSE]
+Why you're asking - helps the model prioritize what to look for.
+```
+
+#### What Context to Include
+
+| Include | Why |
+|---------|-----|
+| Who is speaking | Gemini may not recognize the narrator |
+| Domain/topic | Technical terms need framing |
+| What just happened | Continuity from previous segments |
+| What you already know | Prevents redundant explanations |
+| What's confusing you | Focuses the model's attention |
+
+#### What NOT to Include
+
+- Don't dump the entire transcript (too long, dilutes focus)
+- Don't provide wrong assumptions (biases the model)
+- Don't ask 10 questions at once (pick 3-5 max)
+
+This context-setting is what makes deep dives powerful - you're combining your global understanding with Gemini's ability to see the actual pixels and hear the actual audio.
 
 ### Types of Deep Dive Questions
 
