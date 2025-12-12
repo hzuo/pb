@@ -226,6 +226,16 @@ def wait_for_active(file_obj, poll_sec=5):
 def deep_dive(file_uri, start_sec, end_sec, question, fps=1.0):
     """Zoom into specific segment with a directed question."""
 
+    # Tell Gemini what segment it's viewing so timestamps are unambiguous
+    # (Using same format as the chunking script: MM:SS or H:MM:SS)
+    def fmt(sec):
+        h, rem = divmod(int(sec), 3600)
+        m, s = divmod(rem, 60)
+        return f"{h}:{m:02d}:{s:02d}" if h > 0 else f"{m:02d}:{s:02d}"
+
+    segment_context = f"[You are viewing the segment from {fmt(start_sec)} to {fmt(end_sec)} of the video. Report any timestamps in absolute video time, not relative to this clip.]\n\n"
+    full_question = segment_context + question
+
     payload = {
         "contents": [{
             "parts": [
@@ -237,7 +247,7 @@ def deep_dive(file_uri, start_sec, end_sec, question, fps=1.0):
                         "fps": fps,
                     },
                 },
-                {"text": question},
+                {"text": full_question},
             ]
         }],
         "generationConfig": {
