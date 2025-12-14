@@ -2322,3 +2322,67 @@ This appendix captures what the **12/12/2025 General Medicine Progress Note** ad
 
 - Re‑states the ongoing plan for **full‑dose anticoagulation** (with PT/OT) and later transition to **Lovenox vs DOAC** once stable/therapeutic.
 - Re‑states the Infectious Disease direction to remain **off antibiotics** with **repeat peripheral blood cultures in 2–3 days** and monitoring for fevers.
+
+---
+
+## Appendix G – 12/13/2025 General Medicine Progress Note (Incremental Update / Delta)
+
+This appendix captures what the **12/13/2025 General Medicine Progress Note** adds beyond what is already summarized above (Appendices A–F).
+
+### G.1 Interval history / new symptoms
+
+- Patient reports feeling **groggy** with **slightly blurry vision**.
+- Denies **fever, chills, chest pain, dyspnea, abdominal pain**.
+- States the **right chest Hickman–associated hematoma has improved** after compression.
+
+### G.2 Hematoma / line site status (exam)
+
+- Musculoskeletal exam documents: **right chest CVC without surrounding blood, ecchymosis, or apparent induration; site non‑tender**.
+- This supports that the previously identified **right subpectoral hematoma** remains **clinically stable/improving**.
+
+### G.3 Appetite stimulation: Marinol started and dose escalation
+
+- Patient requested an increase in **Marinol (dronabinol)**, which was **started the day prior**.
+- Plan is to **increase Marinol to 5 mg PO BID** and assess tolerance.
+  - (Medication list in the note still shows **dronabinol 2.5 mg BID** as active at the time of printing, suggesting the increase may be newly planned vs already reflected in orders.)
+
+### G.4 Anticoagulation status and discharge planning nuance
+
+- **aPTT remains subtherapeutic**; plan is to **continue heparin infusion per nomogram**.
+- If **aPTT becomes therapeutic** and the **hematoma remains stable**, team will consider transition to a **home anticoagulation regimen**.
+- New nuance: the team flags uncertainty about **oral anticoagulant absorption in short‑gut syndrome**, and notes that **Lovenox** may be preferable if absorption is a concern.
+
+### G.5 Hematology: “1% blasts” flagged on 12/12 smear
+
+- Note documents **1% blasts** reported on the **12/12 peripheral smear**.
+- Discussed with Hematology:
+  - **No blasts** were seen on manual review.
+  - Hematology recommends **outpatient hematology follow‑up**.
+
+### G.6 Objective snapshot (12/13)
+
+**Vitals/measurements (last charted 12/13):**
+
+- Temp **37.1°C**, RR **18**, SpO₂ **93%** (room air), weight **62.1 kg** (height 170.18 cm).
+
+**I/O (partial day 12/13):**
+
+- Intake **591.8 mL**, Output **0 mL** (likely incomplete documentation), Net **+591.8 mL**.
+
+**Labs (12/13, compared with prior days):**
+
+- **WBC 15.32 K/µL** (up from 12.67 on 12/12).
+- **Hgb 9.4 g/dL**, Hct 28.6% (improved vs ~8.3 on 12/12).
+- **Platelets 357 K/µL** (continued rebound; thrombocytopenia considered resolved).
+- Na **136**, K **4.7**, BUN **9**, Cr **0.48**.
+- AST **17**, ALT **32**, TBili **0.6**, DBili **0.3**.
+- Albumin **2.9** (improved vs 2.5 on 12/12), total protein **6.2**.
+- aPTT values in table remain ~**27.5–28.5 sec** (subtherapeutic).
+
+### G.7 What changed in the running picture (bottom line)
+
+- New subjective complaints: **grogginess and mild blurry vision** (in the context of Marinol use and planned dose increase).
+- Hematoma and right chest CVC site appear **clinically improved/stable**.
+- Anticoagulation remains **not yet therapeutic by aPTT**, but the team is planning toward **discharge anticoagulation**, explicitly considering **short‑gut absorption limitations**.
+- New hematology flag: **“1% blasts”** reported on automated smear read → **not confirmed on manual review**, but prompts **outpatient heme follow‑up**.
+- Labs show **platelets fully recovered** and **hemoglobin improved**, with **increased WBC** and a **lower SpO₂ reading (93%)** despite no respiratory symptoms.
