@@ -2285,3 +2285,40 @@ This appendix synthesizes **new information** from the following documents:
 - **Thrombosis/bleeding balance:** Platelet recovery (188K) and the decision to **restart/continue therapeutic heparin** suggest the team is pivoting back toward **aggressive anticoagulation** despite the recent chest wall hematoma, while monitoring closely (aPTT not yet therapeutic; CT head obtained for safety).
 - **Neurologic safety check:** The **12/11 CT head** provides reassurance that the known infarcts have **not hemorrhagically transformed** during this phase of anticoagulation management.
 - **Nutrition:** Despite procedural NPO status on 12/11, **TPN + SMOF** remain at goal with standard high‑frequency lab and glucose monitoring.
+
+---
+
+## Appendix F – 12/12/2025 General Medicine Progress Note (Incremental Update)
+
+This appendix captures what the **12/12/2025 General Medicine Progress Note** adds **beyond** what is already summarized above.
+
+### F.1 Clinical status on rounds (12/12 AM)
+
+- Patient **denied acute complaints**.
+- Reported **some abdominal pain while ambulating**, but it was **resolved** by the time of rounds.
+- Specifically **denied chest wall pain** and **right arm pain** (relevant given the recent right chest wall hematoma episode earlier in the stay).
+
+### F.2 Vitals / exam / I&O snapshot
+
+- Vitals in note (last charted): **T 37°C**, **RR 18**, **SpO₂ 96%**.
+- Weight recorded: **65.4 kg** (12/11 10:53); height **170.18 cm**.
+- Exam remains benign: **no acute distress**, lungs non‑labored, regular rhythm, abdomen soft/non‑tender/non‑distended, **ostomy with brown stool**.
+- I&O table (partial day): 12/12 intake **0 mL**, output **100 mL**, net **–100 mL** (*not a full 24‑hr period*).
+
+### F.3 Updated labs in the 12/12 note (12/12 06:00 unless noted)
+
+- **CBC:** WBC **12.67 K/µL**, Hgb **8.3 g/dL**, Hct **25.2%**, Plt **232 K/µL**.
+- **Chemistry:** Na **133 mmol/L**, K **4.4**, Cl **101**, CO₂ **27**, BUN **11**, Cr **0.45 mg/dL**, Ca **8.2 mg/dL**, Mg **1.8 mg/dL**, Phos **3.2 mg/dL**.
+- **Liver panel:** AST **16 IU/L**, ALT **37 IU/L**, Alk Phos **99 IU/L**, TBili **0.6 mg/dL**, albumin **2.5 g/dL**, total protein **5.3 g/dL**.
+- **Coag:** aPTT **27.3 sec** (12/12 07:41).
+
+### F.4 Therapy/operational status reflected in the note
+
+- **Heparin infusion** is still listed as active (25,000 U in 250 mL NS at **600 U/hr**).
+- **Enoxaparin prophylaxis remains suspended**; **SCDs** continue as mechanical prophylaxis.
+- **TPN and SMOFlipid** continue to appear active in the medication list.
+
+### F.5 Plan items reiterated on 12/12 (no material change)
+
+- Re‑states the ongoing plan for **full‑dose anticoagulation** (with PT/OT) and later transition to **Lovenox vs DOAC** once stable/therapeutic.
+- Re‑states the Infectious Disease direction to remain **off antibiotics** with **repeat peripheral blood cultures in 2–3 days** and monitoring for fevers.
