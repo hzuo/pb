@@ -2386,3 +2386,90 @@ This appendix captures what the **12/13/2025 General Medicine Progress Note** ad
 - Anticoagulation remains **not yet therapeutic by aPTT**, but the team is planning toward **discharge anticoagulation**, explicitly considering **short‑gut absorption limitations**.
 - New hematology flag: **“1% blasts”** reported on automated smear read → **not confirmed on manual review**, but prompts **outpatient heme follow‑up**.
 - Labs show **platelets fully recovered** and **hemoglobin improved**, with **increased WBC** and a **lower SpO₂ reading (93%)** despite no respiratory symptoms.
+
+## Appendix H – Additional details from 12/13–12/15 notes (General Medicine + Nutrition)
+
+This appendix captures incremental information from the following source documents, focusing on details not already explicitly represented in Appendices A–G:
+
+- **General Medicine Progress Note** – **12/13/2025 17:06 EST** (CHO MD, JACOB)
+- **General Medicine Progress Note** – **12/14/2025 16:57 EST** (CHO MD, JACOB)
+- **Nutritional Service Note (Nutrition Follow Up)** – **12/15/2025 12:52 EST** (SORGE MS, RDN, CDN, CNSC, EMILY)
+
+---
+
+### H.1 12/13 General Medicine note – granular symptom/exam detail and problem framing
+
+- **Grogginess / blurry vision – exam detail:** while the patient reported feeling **groggy** with **slightly blurry vision**, the note documents a reassuring focused eye/cranial exam:
+  - **Pupils equal, round, reactive to light (PERRL)**.
+  - **Extraocular movements intact (EOMI)**.
+  - **No scleral injection, no icterus**.
+  - **No horizontal nystagmus**, and **smooth pursuit present**.
+
+- **Hyponatremia explicitly framed as hypovolemic:** the problem list labels **“Hypovolemic Hyponatremia”** as likely due to **poor solute intake and volume losses**.
+  - Plan in the note includes **continuing Marinol** with a planned increase (see H.2/H.3 for subsequent confirmation of the 5 mg BID dose).
+
+- **Fluid balance context from the I/O table (beyond the partial 12/13 day):**
+  - **12/12:** Intake **2196.84 mL**, Output **350 mL**, Net **+1846.84 mL**.
+  - **12/11:** Intake **1929.57 mL**, Output **400 mL**, Net **+1529.57 mL**.
+  - **12/13*** (partial day): Intake **591.8 mL**, Output **0 mL** (likely incomplete documentation).
+
+---
+
+### H.2 12/14 General Medicine note – appetite response, eosinophilia, and anticoagulation trend
+
+- **Appetite response:** patient reports **appetite improved** with the increased **Marinol** dose.
+  - She denies **chest pain** (including right chest), **fever/chills**, **dyspnea**, or **abdominal pain**.
+
+- **Heparin infusion continues; aPTT improving but still described as subtherapeutic:**
+  - Narrative: “**aPTT remains subtherapeutic**. Continue **heparin gtt** as per nomogram.”
+  - Lab table shows **aPTT values increasing** compared with 12/13:
+    - **12/14:** aPTT **44.0 sec** and **54.3 sec** (vs **~27.5–28.5 sec** on 12/13).
+  - Interpretation: anticoagulation effect appears to be **moving upward toward goal**, but the team still considers it **not yet therapeutic**.
+
+- **New lab issue explicitly called out:** **eosinophilia** with **AEC 930** (“unclear etiology; monitor”).
+
+- **PRN antiemetic regimen now explicitly ordered in the chart context:**
+  - **Ondansetron (Zofran) 4 mg IV q6h PRN** (1st choice).
+  - **Metoclopramide (Reglan) 10 mg IV q6h PRN** (2nd choice).
+
+- **Snapshot (12/14):**
+  - Vitals: **T 36.9°C**, **RR 18**, **SpO₂ 93%** (room air), **weight 62.5 kg**.
+  - Labs: **WBC 13.26 K/µL**, **Hgb 9.2 g/dL**, **Plt 360 K/µL**; **Na 137**, **Cr 0.49**.
+  - LFTs: **AST 13**, **ALT 24**, **TBili 0.5**, **DBili 0.2**.
+  - Protein status: **albumin 2.7 g/dL**, total protein **5.9 g/dL**.
+
+- **I/O (12/14*** partial day):** Intake **611.6 mL**, Output **450 mL**, Net **+161.6 mL**.
+
+---
+
+### H.3 12/15 Nutrition follow‑up – improved PO intake, supplement discontinuation request, and potential step‑down from daily inpatient TPN
+
+- **PO intake improving (patient‑reported, attributed to Marinol increase):**
+  - Breakfast (12/15): **1 bowl of cereal**, **1 cup of fruit**, **1 package of Lorna Doones**.
+  - Lunch pattern: **1 peanut‑butter & jelly sandwich**.
+  - Dinner pattern: daughter often brings food such as **soup**.
+
+- **Oral supplement preference change:** patient requests to **discontinue Ensure Clear**.
+
+- **Diet order context (as documented in the note):**
+  - **Unrestricted diet**, with charted estimate: **50–75% of meals**.
+
+- **TPN/SMOFlipid still running at goal (no change in formula in this note):**
+  - **TPN – Adult Special Formula:** **1600 mL/day** at **67 mL/hr** over **~23.9 hr**.
+  - **SMOFlipid 20%:** **40 g/day** (200 mL) at **16.6 mL/hr** over **12 hr**.
+  - Stated provision: **~1387 kcal/day, 70 g protein/day, 40 g lipids/day**.
+
+- **Important longer‑term nutrition planning nuance:** RD notes that **prior to admission** the patient reportedly received **TPN 3×/week**; with improving PO intake, the plan is to **monitor adequacy and adjust TPN accordingly** (while continuing to monitor ostomy output and weights).
+
+- **Laboratory tolerance / monitoring focus:** RD states she appears to be tolerating the regimen based on available labs, but to **monitor phosphorus**.
+  - In the lab trend table, **phosphorus is elevated to 4.2** on **12/15**.
+
+- **Weights (measured scale weights):**
+  - **62.5 kg** measured **12/15**.
+  - **63.6 kg** measured **12/10**.
+  - For longer context: **66.7 kg** measured **10/29**.
+
+- **RD‑estimated needs (as documented):**
+  - Estimated calorie needs: **1780 kcal/day**.
+  - Estimated protein needs: **71 g/day**.
+  - Ideal body weight (calculated): **61.36 kg**.
