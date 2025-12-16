@@ -1923,7 +1923,24 @@ def gemini_construct_function_response(result: PythonExecResponse) -> dict:
             image_refs.append(
                 {
                     "image_path": file_path,
-                    "$ref": file_path,
+                    # NOTE(hzuo-25-12-15-mon): For some reason, this suddenly stopped working on 25-12-15.
+                    #
+                    # We get:
+                    # "The referenced name `test.png` in function_response.response does not match to a display_name in the function_response.parts."
+                    #
+                    # The intent per the API docs:
+                    # "You can also reference a multimodal part from within the
+                    # structured response field of the functionResponse part by
+                    # using the JSON reference format {"$ref": "<displayName>"}.
+                    # The model substitutes the reference with the multimodal
+                    # content when processing the response. Each displayName can
+                    # only be referenced once in the structured response field."
+                    # https://docs.cloud.google.com/vertex-ai/generative-ai/docs/multimodal/function-calling#mm-fr
+                    #
+                    # We still get the error even if we use os.path.basename(file_path) as the displayName instead of the full file_path.
+                    #
+                    # However, even without the $ref, the model can still see the image, so for now we'll just omit the $ref.
+                    # "$ref": file_path,
                 }
             )
         function_response["functionResponse"]["parts"] = inline_parts
