@@ -30,6 +30,7 @@
 #     "pyjwt[crypto]>=2.10.1",
 #     "paramiko>=4.0.0",
 #     "fabric>=3.2.2",
+#     "jinja2>=3.1.6",
 #     "fitdecode>=0.11.0",
 # ]
 # ///
@@ -58,6 +59,7 @@ import uuid
 from pathlib import Path
 from typing import Any, Literal, Tuple
 
+import jinja2
 import openai
 import prompt_toolkit
 import requests
@@ -111,6 +113,7 @@ dependencies = [
   "pyjwt[crypto]>=2.10.1",
   "paramiko>=4.0.0",
   "fabric>=3.2.2",
+  "jinja2>=3.1.6",
   "fitdecode>=0.11.0",
 ]
 </available_libraries>
@@ -2420,20 +2423,9 @@ def handle_slash_command(
         if not text:
             return text
 
-        result = text
-        for name, value in sandbox_globals["command_params"].items():
-            result = result.replace(f"{{{{{name}}}}}", value)
-
-        if "{{" in result or "}}" in result:
-            unresolved = re.findall(r"\{\{(.*?)\}\}", result)
-            if unresolved:
-                raise ValueError(
-                    "Missing values for parameters: "
-                    + ", ".join(sorted(set(unresolved)))
-                )
-            raise ValueError("Prompt contains unmatched parameter delimiters")
-
-        return result
+        env = jinja2.Environment(undefined=jinja2.StrictUndefined)
+        template = env.from_string(text)
+        return template.render(sandbox_globals["command_params"])
 
     frontmatter, markdown_body = parse_frontmatter(raw_markdown)
     arg_dict = parse_args(argv[1:])
