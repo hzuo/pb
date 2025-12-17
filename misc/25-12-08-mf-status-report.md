@@ -2473,3 +2473,93 @@ This appendix captures incremental information from the following source documen
   - Estimated calorie needs: **1780 kcal/day**.
   - Estimated protein needs: **71 g/day**.
   - Ideal body weight (calculated): **61.36 kg**.
+
+## Appendix I – 12/16–12/17/2025 Updates (General Medicine, Nutrition, Hematology)
+
+This appendix synthesizes **new information** from the following documents:
+
+- **General Medicine Progress Note** – **12/15/2025 17:23 EST** (signed 12/16/2025 08:30) – **Jacob Cho, MD**
+- **Nutritional Service Note** – **12/16/2025 08:45 EST** – **Emily Sorge, MS, RDN, CDN, CNSC**
+- **General Medicine Progress Note** – **12/16/2025 16:07 EST** – **Jacob Cho, MD**
+- **Hematology Progress Note** – **12/17/2025 09:28 EST** (addended 17:43) – **Taroob Latef, MBBS; Anna Andrzejczyk, MD**
+
+### I.1 High‑impact additions / changes (relative to Appendices A–H)
+
+1. **Anticoagulation strategy advanced:** after achieving **therapeutic aPTT on heparin for ~48 hours**, the team **transitioned to therapeutic enoxaparin (Lovenox) 60 mg SC q12h** (patient preference over a DOAC due to concerns about absorption with short‑gut syndrome).
+2. **New active hematology issue:** rising **leukocytosis with rapidly increasing eosinophilia → hypereosinophilia**, prompting **Hematology consult** and a new workup/monitoring plan.
+3. **TPN electrolyte adjustment:** persistent **hyperphosphatemia** led Nutrition/TPN pharmacy to **further reduce phosphate in the TPN bag** (details below).
+4. **GI/ostomy/fistula status update:** **intermittent fistula bleeding is present** (described as not severe by the patient); she **declined repeat CRS evaluation** at that time.
+5. **Follow‑up actions clarified:** plan to obtain **surveillance blood cultures** off antibiotics; General Medicine also documents a planned **TTE around 12/24** to reassess the **SVC catheter‑associated thrombus/echnodensity**.
+
+---
+
+### I.2 Clinical status and symptoms (12/15–12/16)
+
+- **Overall status:** patient described as comfortable and in no distress; **denies fever/chills**, cough, dyspnea, chest pain (including near Hickman), dysuria, and abdominal pain.
+- **Appetite / PO intake:** appetite remains **improved on Marinol (dronabinol 5 mg PO BID)**.
+- **Stool/ostomy output:** patient reports **improved stool consistency** with improved PO intake.
+- **Fistula bleeding:** bleeding is **present** but patient reports she has intermittent episodes and that it has been **worse in the past**.
+  - 12/16 exam notes: **ostomy with green/brown stool** and an adjacent fistula pouch with **muddy maroon fluid**.
+  - Patient **deferred CRS evaluation** for bleeding at that time.
+
+---
+
+### I.3 Anticoagulation & thrombosis management (operational change)
+
+- **12/15 note:** aPTT documented as **“at goal”** on a high‑risk heparin nomogram; patient/daughter prefer **Lovenox** over a DOAC (e.g., Eliquis) because of uncertain oral absorption in short‑gut syndrome.
+- **12/16 note:** aPTT documented as **therapeutic for ~48 hours**, and plan executed to **transition from heparin infusion to therapeutic enoxaparin**.
+- **Medication record confirms switch:** active medication list includes **enoxaparin 60 mg SC q12h**.
+- **Bleeding/hematoma monitoring remains central:** the team continues to monitor H/H and the right chest wall hematoma area while on therapeutic anticoagulation; transfusion threshold remains **Hgb <7 g/dL** per GM plan.
+
+---
+
+### I.4 Leukocytosis, eosinophilia/hypereosinophilia, and “blasts” follow‑up
+
+- **Leukocytosis:** persists around **~15 K/µL**.
+- **Eosinophils / AEC trend (as documented):**
+  - 12/15 GM: **AEC ~1.22 K/µL** (persistent eosinophilia).
+  - 12/16 GM: **AEC ~2.01 K/µL** (hypereosinophilia) → **Hematology consulted**.
+  - 12/17 Hematology: AEC reported as **>4.46 K/µL**, steadily rising since 12/13.
+  - Hematology note also includes a manual eosinophil trend (“Eos #, Manual Diff”) that rises to **~2.0 K/µL** by 12/17, consistent with the upward trajectory.
+
+- **“Blasts” context (re‑stated with hematology interpretation):**
+  - 12/12 smear flagged **1% blasts** on automated read.
+  - Hematology manual review found **no blasts**, felt possibly related to **recovering bone marrow**.
+
+- **Hematology assessment (12/17):**
+  - Pattern appears **acute** and most consistent with **reactive/secondary eosinophilia** (polyclonal expansion), commonly related to medications, infections (including helminths), allergens, or inflammatory conditions.
+  - **Peripheral smear** described as reactive: typical bilobed nuclei/coarse eosinophil granules, some degranulation, **no overt dysplasia**.
+  - Hematology highlights prior **cefepime exposure (12/3–12/11)** as a possible contributor (cephalosporins can be implicated in delayed hypersensitivity reactions with eosinophilia).
+  - They note most cases have **no clinical consequence**, but persistent hypereosinophilia rarely can progress to **hypereosinophilic syndrome (HES)** or **DRESS**, with possible end‑organ injury.
+
+- **Workup / monitoring recommended by Hematology:**
+  - **Troponin** (screen for occult cardiac involvement; isolated cardiac HES can occur and be initially asymptomatic).
+  - **Strongyloides antibody**.
+  - **Stool ova and parasites**.
+  - **Daily CBC with differential** to trend AEC.
+
+- **Additional lab plan documented by General Medicine (12/16):**
+  - Check **tryptase** and **vitamin B12**.
+  - Continue monitoring and coordinate hematology follow‑up.
+
+---
+
+### I.5 Nutrition / TPN update (12/16)
+
+- **Hyperphosphatemia persists:** phosphorus **4.5 mg/dL** on 12/16 (4.2 on 12/15).
+- **TPN phosphate adjustments (explicit):**
+  - Phosphate in the bag running at the time had already been reduced from **25 mmol → 15 mmol**.
+  - Nutrition recommends **further reduction to 10 mmol** for the next TPN bag.
+- **TPN continues at goal with standard monitoring:** TPN **1,600 mL/day** (~24 hr infusion) and **SMOFlipid 40 g/day** (~12 hr), with daily/weekly monitoring per the existing TPN protocol.
+
+---
+
+### I.6 Snapshot of vitals and key labs (for context)
+
+- **Vitals/weight:** afebrile; SpO₂ **~95–98%** on room air; weight **~62.5 kg**.
+- **Selected labs:**
+  - WBC **~15.2–15.5 K/µL**.
+  - Hgb **~8.9–9.3 g/dL**.
+  - Platelets **~366–376 K/µL**.
+  - Creatinine **~0.52–0.57 mg/dL**.
+  - Phosphorus **4.2 → 4.5 mg/dL** (driving TPN phosphate reductions).
