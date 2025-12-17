@@ -1720,7 +1720,7 @@ def gemini_extract_function_calls(candidate: dict) -> list[dict]:
     return calls
 
 
-gemini_model_name = "gemini-3-pro-preview"
+gemini_model = "gemini-3-pro-preview"
 
 
 def gemini_call(history: list) -> dict:
@@ -1732,7 +1732,7 @@ def gemini_call(history: list) -> dict:
     assert api_key, "GEMINI_API_KEY is not set"
 
     response = requests.post(
-        f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model_name}:generateContent",
+        f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent",
         headers={
             "Content-Type": "application/json",
             "x-goog-api-key": api_key,
@@ -2097,12 +2097,15 @@ def get_model_interface():
             "haiku",
             "opus",
             "gemini",
+            "gemini-3-pro-preview",
+            "gemini-3-flash-preview",
         ],
         default="openai",
     )
     args = parser.parse_args()
     global openai_model
     global anthropic_model
+    global gemini_model
     if args.model in ("openai", "gpt51", "gpt52"):
         if args.model == "openai":
             # openai (which is the default) defaults to gpt-5.1
@@ -2160,9 +2163,25 @@ def get_model_interface():
             "append_user_message": anthropic_append_user_message,
             "run_turn": anthropic_run_turn,
         }
-    elif args.model == "gemini":
+    elif args.model in ("gemini", "gemini-3-pro-preview", "gemini-3-flash-preview"):
+        if args.model == "gemini":
+            # gemini (which is the default) defaults to gemini-3-pro-preview
+            # this is here for backwards compatibility
+            model_type = "gemini-3-pro-preview"
+            gemini_model = "gemini-3-pro-preview"
+        elif args.model == "gemini-3-pro-preview":
+            # option for explicitly using gemini-3-pro-preview
+            model_type = "gemini-3-pro-preview"
+            gemini_model = "gemini-3-pro-preview"
+        elif args.model == "gemini-3-flash-preview":
+            # option for explicitly using gemini-3-flash-preview
+            model_type = "gemini-3-flash-preview"
+            gemini_model = "gemini-3-flash-preview"
+        else:
+            raise AssertionError
+
         return {
-            "model_type": "gemini",
+            "model_type": model_type,
             "session_namespace": "personalbot03",
             "validate_history": gemini_validate_history,
             "append_user_message": gemini_append_user_message,

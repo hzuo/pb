@@ -36,6 +36,14 @@ bot-gemini:
   #!/usr/bin/env bash
   uv run --env-file=.env personalbot.py -m gemini
 
+bot-gemini-pro:
+  #!/usr/bin/env bash
+  uv run --env-file=.env personalbot.py -m gemini-3-pro-preview
+
+bot-gemini-flash:
+  #!/usr/bin/env bash
+  uv run --env-file=.env personalbot.py -m gemini-3-flash-preview
+
 alias b := bot
 alias b51 := bot-gpt51
 alias b52 := bot-gpt52
@@ -43,6 +51,8 @@ alias bs := bot-sonnet
 alias bh := bot-haiku
 alias bo := bot-opus
 alias bg := bot-gemini
+alias bgp := bot-gemini-pro
+alias bgf := bot-gemini-flash
 
 tutorial:
   just run nbc "platform/notebooks/ai-tutorial.py"
