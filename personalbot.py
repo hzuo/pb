@@ -1047,7 +1047,7 @@ def anthropic_call(history: list):
             break  # only add to the latest one
     req = {
         "model": anthropic_model,
-        "max_tokens": 8000,
+        "max_tokens": 64_000,
         "thinking": {
             "type": "enabled",
             "budget_tokens": 31_999,
