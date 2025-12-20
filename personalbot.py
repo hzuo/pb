@@ -3,6 +3,7 @@
 # /// script
 # requires-python = "~=3.13.9"
 # dependencies = [
+#     "logfire[requests,httpx]>=4.16.0",
 #     "openai>=2.8.0",
 #     "anthropic>=0.72.0",
 #     "prompt-toolkit>=3.0.51",
@@ -60,6 +61,7 @@ from pathlib import Path
 from typing import Any, Literal, Tuple
 
 import jinja2
+import logfire
 import openai
 import prompt_toolkit
 import requests
@@ -68,6 +70,37 @@ from pydantic import BaseModel, Field, RootModel, computed_field
 from rich.console import Console
 from rich.panel import Panel
 from rich.syntax import Syntax
+
+
+
+def get_logfire_environment():
+    import getpass
+    import os
+    import re
+    import socket
+
+    hostname = socket.gethostname()
+    username = getpass.getuser()
+    pid = os.getpid()
+
+    environment = f"{hostname}-{username}-{pid}"
+    normalized = re.sub(r"[^a-z0-9]+", "-", environment.lower())
+    return normalized
+
+
+logfire.configure(
+    send_to_logfire="if-token-present",
+    service_name=os.path.basename(__file__),
+    environment=get_logfire_environment(),
+    scrubbing=False,
+    inspect_arguments=False,
+    console=logfire.ConsoleOptions(
+        min_log_level="notice",
+        show_project_link=False,
+    ),
+)
+logfire.instrument_requests()
+logfire.instrument_httpx()
 
 SYSTEM_PROMPT = """
 You are Personal Bot, an advanced Agentic AI assisting the user for a variety of personal tasks.
@@ -785,6 +818,7 @@ _dsp_buffers = {
 }
 
 
+@logfire.instrument(record_return=True)
 def python_exec(code: str) -> PythonExecResponse:
     dspq.put(
         {
@@ -1262,6 +1296,7 @@ def anthropic_construct_tool_result_content(result: PythonExecResponse) -> str |
     return content_blocks
 
 
+@logfire.instrument(record_return=True)
 def anthropic_run_turn(history: list, turn_number: int):
     step_number = 0
     while True:
@@ -1330,15 +1365,38 @@ def anthropic_run_turn(history: list, turn_number: int):
 
 
 def anthropic_append_user_message(history: list, message: str):
+    # Anthropic supports up to 4 cache breakpoints.
+    # We automatically use 1 for the system prompt and 1 for the tail of the conversation.
+    # This leaves 2 available for use within the user message via <!-- CACHE_BREAKPOINT --> (case-insensitive).
+    parts = re.split(r"^\s*<!--\s*(?i:cache_breakpoint)\s*-->\s*$", message, flags=re.MULTILINE)
+    content_blocks = []
+    for i, part in enumerate(parts):
+        part = part.strip()
+        if not part:
+            continue
+
+        # Anthropic concatenates text blocks. To ensure separation (like a paragraph break),
+        # we append newlines. We use strip() to normalize, then add the separator.
+        # This matches the behavior of "\n\n".join(...) used for other providers.
+        text_content = part
+        if i < len(parts) - 1:
+            text_content += "\n\n"
+
+        block = {
+            "type": "text",
+            "text": text_content,
+        }
+        if i < len(parts) - 1:
+            block["cache_control"] = {"type": "ephemeral", "ttl": "5m"}
+        content_blocks.append(block)
+
+    if not content_blocks:
+        content_blocks.append({"type": "text", "text": message})
+
     history.append(
         {
             "role": "user",
-            "content": [
-                {
-                    "type": "text",
-                    "text": message,
-                }
-            ],
+            "content": content_blocks,
         }
     )
 
@@ -1601,6 +1659,7 @@ def openai_construct_function_call_output(result: PythonExecResponse) -> str | l
     return content_blocks
 
 
+@logfire.instrument(record_return=True)
 def openai_run_turn(
     client: openai.OpenAI,
     history: list,
@@ -1677,6 +1736,8 @@ def openai_run_turn(
 
 
 def openai_append_user_message(history: list, message: str):
+    parts = re.split(r"^\s*<!--\s*(?i:cache_breakpoint)\s*-->\s*$", message, flags=re.MULTILINE)
+    message = "\n\n".join(part.strip() for part in parts if part.strip())
     history.append(
         {
             "role": "user",
@@ -1952,6 +2013,7 @@ def gemini_construct_function_response(result: PythonExecResponse) -> dict:
     return function_response
 
 
+@logfire.instrument(record_return=True)
 def gemini_run_turn(history: list, turn_number: int) -> str:
     step_number = 0
     while True:
@@ -2055,6 +2117,8 @@ def gemini_run_turn(history: list, turn_number: int) -> str:
 
 
 def gemini_append_user_message(history: list, message: str):
+    parts = re.split(r"^\s*<!--\s*(?i:cache_breakpoint)\s*-->\s*$", message, flags=re.MULTILINE)
+    message = "\n\n".join(part.strip() for part in parts if part.strip())
     history.append(
         {
             "role": "user",
@@ -2196,6 +2260,7 @@ model_interface = get_model_interface()
 SESSION_NAMESPACE = model_interface["session_namespace"]
 
 
+@logfire.instrument(record_return=True)
 def new_session_id():
     dt = datetime.datetime.now()
     dt_str = dt.strftime("%y-%m-%d-%H-%M-%S")
@@ -2269,6 +2334,7 @@ class RpcRunCommandResult(BaseModel):
     responses: list[JsonRpcResponse]
 
 
+@logfire.instrument
 def api_handler(request: JsonRpcRequest, state: dict) -> JsonRpcResponse:
     global session_id
     try:
@@ -2373,6 +2439,7 @@ def api_handler(request: JsonRpcRequest, state: dict) -> JsonRpcResponse:
         )
 
 
+@logfire.instrument
 def handle_slash_command(
     history: list, argv: list[str]
 ) -> tuple[list[JsonRpcRequest], list[JsonRpcResponse]]:
@@ -2985,10 +3052,11 @@ def programmatic_main():
 
 
 def main():
-    if sys.stdin.isatty():
-        interactive_main()
-    else:
-        programmatic_main()
+    with logfire.span("personalbot_main", session_id=session_id):
+        if sys.stdin.isatty():
+            interactive_main()
+        else:
+            programmatic_main()
 
 
 if __name__ == "__main__":
