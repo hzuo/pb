@@ -15,6 +15,7 @@
 #     "duckdb>=1.3.2",
 #     "polars>=1.32.3",
 #     "pandas>=2.3.1",
+#     "pyarrow>=22.0.0",
 #     "playwright>=1.54.0",
 #     "pypandoc>=1.15.0",
 #     "pymupdf>=1.26.3",
@@ -50,12 +51,14 @@ import json
 import mimetypes
 import os
 import queue
+import random
 import re
 import shlex
 import subprocess
 import sys
 import textwrap
 import threading
+import time
 import uuid
 from pathlib import Path
 from typing import Any, Literal, Tuple
@@ -70,7 +73,6 @@ from pydantic import BaseModel, Field, RootModel, computed_field
 from rich.console import Console
 from rich.panel import Panel
 from rich.syntax import Syntax
-
 
 
 def get_logfire_environment():
@@ -130,6 +132,7 @@ dependencies = [
   "duckdb>=1.3.2",
   "polars>=1.32.3",
   "pandas>=2.3.1",
+  "pyarrow>=22.0.0",
   "playwright>=1.54.0",
   "pypandoc>=1.15.0",
   "pymupdf>=1.26.3",
@@ -830,7 +833,10 @@ def python_exec(code: str) -> PythonExecResponse:
     # otherwise the printer thread's output will get captured by the contextlib calls made by python_exec_impl
     dspq.join()
 
-    result = python_exec_impl(code)
+    # Set baggage so all descendant spans (including auto-instrumented HTTP calls) are tagged.
+    # This allows alerts to filter out errors from kernel code vs the bot's own code.
+    with logfire.set_baggage(python_exec="true"):
+        result = python_exec_impl(code)
 
     image_attachment_files = helpers.drain_image_attachments()
     image_attachments = read_image_attachments(image_attachment_files)
@@ -1039,6 +1045,7 @@ def dsp_console_print(event: dict):
     elif event_type == "error":
         error_text = event.get("errorText", "")
         console.print(f"\n[yellow]error: {error_text}[/yellow]")
+        logfire.error("dsp error event", error_text=error_text)
 
     else:
         console.print(f"\n[yellow]unknown event: {json.dumps(event)}[/yellow]")
@@ -1368,7 +1375,9 @@ def anthropic_append_user_message(history: list, message: str):
     # Anthropic supports up to 4 cache breakpoints.
     # We automatically use 1 for the system prompt and 1 for the tail of the conversation.
     # This leaves 2 available for use within the user message via <!-- CACHE_BREAKPOINT --> (case-insensitive).
-    parts = re.split(r"^\s*<!--\s*(?i:cache_breakpoint)\s*-->\s*$", message, flags=re.MULTILINE)
+    parts = re.split(
+        r"^\s*<!--\s*(?i:cache_breakpoint)\s*-->\s*$", message, flags=re.MULTILINE
+    )
     content_blocks = []
     for i, part in enumerate(parts):
         part = part.strip()
@@ -1736,7 +1745,9 @@ def openai_run_turn(
 
 
 def openai_append_user_message(history: list, message: str):
-    parts = re.split(r"^\s*<!--\s*(?i:cache_breakpoint)\s*-->\s*$", message, flags=re.MULTILINE)
+    parts = re.split(
+        r"^\s*<!--\s*(?i:cache_breakpoint)\s*-->\s*$", message, flags=re.MULTILINE
+    )
     message = "\n\n".join(part.strip() for part in parts if part.strip())
     history.append(
         {
@@ -1771,6 +1782,85 @@ def openai_validate_history(history: list):
     )
 
 
+# Circuit breaker for Gemini death loops
+def _gemini_should_circuit_break(history: list) -> bool:
+    """
+    Check if we should circuit break due to death loop.
+
+    Rule: >= 20 python_exec calls AND >= 5 consecutive no-op turns
+
+    A no-op turn is where either:
+    1. stdout and stderr are both empty
+    2. code is just print()/comments/pass
+    """
+
+    def _is_print_only(code: str) -> bool:
+        """Check if code is just print/comments/pass (no side effects)"""
+        code = code.strip()
+        if not code:
+            return True
+        for line in code.split("\n"):
+            line = line.strip()
+            if not line or line.startswith("#") or line == "pass":
+                continue
+            if line.startswith("print(") and line.endswith(")"):
+                continue
+            return False
+        return True
+
+    def _is_noop_turn(code: str, response: dict) -> bool:
+        """Check if a function call/response pair is a no-op"""
+        # Empty response is a no-op
+        stdout = response.get("stdout", "").strip()
+        stderr = response.get("stderr", "").strip()
+        if response.get("status") == "ok" and stdout == "" and stderr == "":
+            return True
+        # Print-only code is a no-op
+        return _is_print_only(code)
+
+    # Count python_exec calls and track consecutive no-ops
+    call_count = 0
+    consecutive_noops = 0
+    max_consecutive_noops = 0
+
+    pending_code = None
+
+    for item in history:
+        if item.get("role") == "model":
+            parts = item.get("parts", [])
+            for p in parts:
+                if "functionCall" in p:
+                    pending_code = p["functionCall"].get("args", {}).get("code", "")
+
+        elif item.get("role") == "user":
+            parts = item.get("parts", [])
+            if parts and "functionResponse" in parts[0]:
+                call_count += 1
+                resp = parts[0]["functionResponse"].get("response", {})
+
+                if pending_code is not None:
+                    if _is_noop_turn(pending_code, resp):
+                        consecutive_noops += 1
+                        max_consecutive_noops = max(
+                            max_consecutive_noops, consecutive_noops
+                        )
+                    else:
+                        consecutive_noops = 0
+                    pending_code = None
+
+    should_break = call_count >= 20 and max_consecutive_noops >= 5
+
+    if should_break:
+        logfire.warn(
+            "gemini circuit breaker triggered - death loop detected",
+            call_count=call_count,
+            max_consecutive_noops=max_consecutive_noops,
+            history=history,
+        )
+
+    return should_break
+
+
 def gemini_extract_function_calls(candidate: dict) -> list[dict]:
     calls: list[dict] = []
     content = candidate.get("content") or {}
@@ -1792,62 +1882,91 @@ def gemini_call(history: list) -> dict:
     api_key = os.environ.get("GEMINI_API_KEY")
     assert api_key, "GEMINI_API_KEY is not set"
 
-    response = requests.post(
-        f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent",
-        headers={
-            "Content-Type": "application/json",
-            "x-goog-api-key": api_key,
-        },
-        timeout=360,
-        json={
-            "generationConfig": {
-                "thinkingConfig": {
-                    "thinkingLevel": "HIGH",
-                    "includeThoughts": True,
-                }
-            },
-            "tools": [
-                {
-                    "functionDeclarations": [
-                        {
-                            "name": "python_exec",
-                            "description": PYTHON_EXEC_TOOL_DESCRIPTION,
-                            "parameters": {
-                                "type": "OBJECT",
-                                "properties": {
-                                    "code": {
-                                        "type": "STRING",
-                                        "description": "The Python code to execute.",
-                                    }
-                                },
-                                "required": ["code"],
-                            },
-                        }
-                    ],
-                }
-            ],
-            "toolConfig": {
-                "functionCallingConfig": {
-                    "mode": "AUTO",
-                }
-            },
-            "systemInstruction": {
-                "parts": [
-                    {
-                        "text": instructions,
-                    }
-                ]
-            },
-            "contents": history,
-        },
-    )
-    if not response.ok:
-        dspq.put(
-            {
-                "type": "error",
-                "errorText": f"gemini error! {response.text}",
+    request_json = {
+        "generationConfig": {
+            "thinkingConfig": {
+                "thinkingLevel": "HIGH",
+                "includeThoughts": True,
             }
+        },
+        "tools": [
+            {
+                "functionDeclarations": [
+                    {
+                        "name": "python_exec",
+                        "description": PYTHON_EXEC_TOOL_DESCRIPTION,
+                        "parameters": {
+                            "type": "OBJECT",
+                            "properties": {
+                                "code": {
+                                    "type": "STRING",
+                                    "description": "The Python code to execute.",
+                                }
+                            },
+                            "required": ["code"],
+                        },
+                    }
+                ],
+            }
+        ],
+        "toolConfig": {
+            "functionCallingConfig": {
+                "mode": "AUTO",
+            }
+        },
+        "systemInstruction": {
+            "parts": [
+                {
+                    "text": instructions,
+                }
+            ]
+        },
+        "contents": history,
+    }
+
+    max_retries = 10
+    for attempt in range(max_retries):
+        response = requests.post(
+            f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent",
+            headers={
+                "Content-Type": "application/json",
+                "x-goog-api-key": api_key,
+            },
+            timeout=360,
+            json=request_json,
         )
+
+        # Retry on transient errors
+        if (
+            response.status_code in {408, 413, 429, 500, 502, 503, 504, 529}
+            and attempt < max_retries - 1
+        ):
+            # 30s base + exponential backoff, capped at 600s
+            # 35s, 40s, 50s, 70s, 110s, 190s, 350s, 600s (capped at 8th attempt)
+            base_delay = min(30.0 + 5.0 * (2**attempt), 600.0)
+            jitter = random.uniform(0, 120)
+            total_delay = base_delay + jitter
+            with logfire.span(
+                "gemini retryable error - sleeping",
+                status_code=response.status_code,
+                total_delay_seconds=total_delay,
+                base_delay_seconds=base_delay,
+                jitter_seconds=jitter,
+                attempt=attempt + 1,
+                max_retries=max_retries,
+            ):
+                time.sleep(total_delay)
+            continue
+
+        if not response.ok:
+            dspq.put(
+                {
+                    "type": "error",
+                    "errorText": f"gemini error! {response.text}",
+                }
+            )
+        break
+
     response.raise_for_status()
     return response.json()
 
@@ -2107,6 +2226,9 @@ def gemini_run_turn(history: list, turn_number: int) -> str:
         )
         write_history(history)
 
+        if _gemini_should_circuit_break(history):
+            return "[CIRCUIT BREAK]"
+
         dspq.put(
             {
                 "type": "finish-step",
@@ -2117,7 +2239,9 @@ def gemini_run_turn(history: list, turn_number: int) -> str:
 
 
 def gemini_append_user_message(history: list, message: str):
-    parts = re.split(r"^\s*<!--\s*(?i:cache_breakpoint)\s*-->\s*$", message, flags=re.MULTILINE)
+    parts = re.split(
+        r"^\s*<!--\s*(?i:cache_breakpoint)\s*-->\s*$", message, flags=re.MULTILINE
+    )
     message = "\n\n".join(part.strip() for part in parts if part.strip())
     history.append(
         {
