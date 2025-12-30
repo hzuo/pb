@@ -108,6 +108,12 @@ logfire.configure(
         show_project_link=False,
     ),
 )
+# NOTE(hzuo-25-12-29-mon): Instrumenting both requests and httpx causes an OpenTelemetry
+# warning: "Views <...> and <...> will cause conflicting metrics identities". This happens
+# because both libraries create metrics with the same name (http.client.duration) and
+# logfire's blanket Histogram View matches both. The warning is harmless - the metrics
+# work correctly. We use httpx only because the OpenAI SDK depends on it; we plan to
+# replace the OpenAI SDK with direct requests calls, which will eliminate this warning.
 logfire.instrument_requests()
 logfire.instrument_httpx()
 
@@ -1476,6 +1482,8 @@ openai_service_tier: Literal["priority", "default"] | None = None
 
 openai_model: Literal["gpt-5.1", "gpt-5.2"] = "gpt-5.1"
 
+openai_reasoning_effort: Literal["low", "medium", "high", "xhigh"] | None = None
+
 openai_verbosity: Literal["low", "medium", "high"] | None = None
 
 
@@ -1486,6 +1494,7 @@ def openai_call(
     global instructions
     global openai_service_tier
     global openai_verbosity
+    global openai_reasoning_effort
 
     if instructions is None:
         instructions = assemble_system_prompt()
@@ -1496,7 +1505,11 @@ def openai_call(
         else:
             openai_service_tier = "default"
 
-    effort = "xhigh" if openai_model == "gpt-5.2" else "high"
+    effort = (
+        openai_reasoning_effort
+        if openai_reasoning_effort
+        else ("xhigh" if openai_model == "gpt-5.2" else "high")
+    )
     response_text_config = (
         {"verbosity": openai_verbosity} if openai_verbosity else openai.omit
     )
@@ -2360,6 +2373,8 @@ def get_model_interface():
             "gpt51",
             "gpt52",
             "gpt52-thinking-xhigh-verbosity-low",
+            "gpt52-thinking-high-verbosity-low",
+            "gpt52-thinking-medium-verbosity-low",
             "anthropic",
             "sonnet",
             "haiku",
@@ -2373,9 +2388,17 @@ def get_model_interface():
     args = parser.parse_args()
     global openai_model
     global openai_verbosity
+    global openai_reasoning_effort
     global anthropic_model
     global gemini_model
-    if args.model in ("openai", "gpt51", "gpt52", "gpt52-thinking-xhigh-verbosity-low"):
+    if args.model in (
+        "openai",
+        "gpt51",
+        "gpt52",
+        "gpt52-thinking-xhigh-verbosity-low",
+        "gpt52-thinking-high-verbosity-low",
+        "gpt52-thinking-medium-verbosity-low",
+    ):
         if args.model == "openai":
             # openai (which is the default) defaults to gpt-5.1
             # this is here for backwards compatibility
@@ -2393,6 +2416,19 @@ def get_model_interface():
             # option for gpt-5.2 with xhigh thinking effort but low verbosity output
             model_type = "openai-gpt52-thinking-xhigh-verbosity-low"
             openai_model = "gpt-5.2"
+            openai_reasoning_effort = "xhigh"
+            openai_verbosity = "low"
+        elif args.model == "gpt52-thinking-high-verbosity-low":
+            # option for gpt-5.2 with high thinking effort but low verbosity output
+            model_type = "openai-gpt52-thinking-high-verbosity-low"
+            openai_model = "gpt-5.2"
+            openai_reasoning_effort = "high"
+            openai_verbosity = "low"
+        elif args.model == "gpt52-thinking-medium-verbosity-low":
+            # option for gpt-5.2 with medium thinking effort but low verbosity output
+            model_type = "openai-gpt52-thinking-medium-verbosity-low"
+            openai_model = "gpt-5.2"
+            openai_reasoning_effort = "medium"
             openai_verbosity = "low"
         else:
             raise AssertionError
