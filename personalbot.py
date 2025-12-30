@@ -63,9 +63,11 @@ import uuid
 from pathlib import Path
 from typing import Any, Literal, Tuple
 
+import httpx
 import jinja2
 import logfire
 import openai
+import opentelemetry.trace
 import prompt_toolkit
 import requests
 import yaml
@@ -89,6 +91,11 @@ def get_logfire_environment():
     normalized = re.sub(r"[^a-z0-9]+", "-", environment.lower())
     return normalized
 
+
+# Truncate large attribute values (e.g. stdout, images) to 500KB.
+# Values exceeding this are hard-cut with no marker. Logfire handles
+# batch-level size limits separately (splits batches > 5MB automatically).
+os.environ.setdefault("OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT", "500000")
 
 logfire.configure(
     send_to_logfire="if-token-present",
@@ -821,7 +828,7 @@ _dsp_buffers = {
 }
 
 
-@logfire.instrument(record_return=True)
+@logfire.instrument(extract_args=["code"], record_return=False)
 def python_exec(code: str) -> PythonExecResponse:
     dspq.put(
         {
@@ -834,7 +841,7 @@ def python_exec(code: str) -> PythonExecResponse:
     dspq.join()
 
     # Set baggage so all descendant spans (including auto-instrumented HTTP calls) are tagged.
-    # This allows alerts to filter out errors from kernel code vs the bot's own code.
+    # This allows alerts to filter out errors from sandbox code vs the bot's own code.
     with logfire.set_baggage(python_exec="true"):
         result = python_exec_impl(code)
 
@@ -853,6 +860,24 @@ def python_exec(code: str) -> PythonExecResponse:
         }
     )
     dspq.join()
+
+    span = opentelemetry.trace.get_current_span()
+    span.set_attribute("len_code", len(code))
+    span.set_attribute("len_output", len(result.stdout) + len(result.stderr))
+    span.set_attribute("len_stdout", len(result.stdout))
+    span.set_attribute("len_stderr", len(result.stderr))
+    span.set_attribute("num_image_attachments", len(image_attachments))
+    span.set_attribute(
+        "sum_len_image_attachments",
+        sum(len(data_url) for _, data_url in image_attachments),
+    )
+    span.set_attribute(
+        "len_image_attachments",
+        json.dumps({path: len(data_url) for path, data_url in image_attachments}),
+    )
+    span.set_attribute("status", result.status)
+    span.set_attribute("stdout", result.stdout[:400000])
+    span.set_attribute("stderr", result.stderr[:400000])
 
     return result
 
@@ -1234,6 +1259,7 @@ def anthropic_dsp_write(res: dict):
                 "usage": usage_copy,
             }
         )
+        logfire.info("llm_usage", usage=usage_copy)
     else:
         dspq.put(
             {
@@ -1303,72 +1329,79 @@ def anthropic_construct_tool_result_content(result: PythonExecResponse) -> str |
     return content_blocks
 
 
-@logfire.instrument(record_return=True)
+@logfire.instrument(extract_args=["turn_number"], record_return=True)
 def anthropic_run_turn(history: list, turn_number: int):
     step_number = 0
     while True:
         step_number += 1
 
-        dspq.put(
-            {
-                "type": "start-step",
-                "turn_number": turn_number,
-                "step_number": step_number,
-            }
-        )
+        with logfire.set_baggage(
+            ai_turn="true",
+            ai_provider="anthropic",
+            ai_model=anthropic_model,
+            turn_number=str(turn_number),
+            step_number=str(step_number),
+        ):
+            dspq.put(
+                {
+                    "type": "start-step",
+                    "turn_number": turn_number,
+                    "step_number": step_number,
+                }
+            )
 
-        res = anthropic_call(history)
+            res = anthropic_call(history)
 
-        # we don't do streaming for anthropic so we just emit all the DSP events at once here
-        anthropic_dsp_write(res)
-        dspq.join()
-
-        history.append({"role": "assistant", "content": res["content"]})
-
-        write_history(history)
-
-        if res["stop_reason"] == "tool_use":
-            tool_results = []
-            for block in res["content"]:
-                if block.get("type") == "tool_use":
-                    code = (block.get("input") or {}).get("code")
-                    assert isinstance(code, str)
-                    python_exec_res = python_exec(code=code)
-                    tool_result_content = anthropic_construct_tool_result_content(
-                        python_exec_res
-                    )
-                    tool_results.append(
-                        {
-                            "type": "tool_result",
-                            "tool_use_id": block.get("id"),
-                            "content": tool_result_content,
-                        }
-                    )
-            history.append({"role": "user", "content": tool_results})
-
-        dspq.put(
-            {
-                "type": "finish-step",
-                "turn_number": turn_number,
-                "step_number": step_number,
-            }
-        )
-
-        if res["stop_reason"] == "end_turn":
+            # we don't do streaming for anthropic so we just emit all the DSP events at once here
+            anthropic_dsp_write(res)
             dspq.join()
 
-            res_text_blocks = [
-                # concat all text
-                block.get("text")
-                for block in res.get("content")
-                if block.get("type") == "text"
-            ]
-            res_text = "\n".join(res_text_blocks)
-            return res_text
-        elif res["stop_reason"] == "tool_use":
-            pass
-        else:
-            raise RuntimeError(f"Bad stop_reason: {res['stop_reason']}")
+            history.append({"role": "assistant", "content": res["content"]})
+
+            write_history(history)
+
+            if res["stop_reason"] == "tool_use":
+                tool_results = []
+                for block in res["content"]:
+                    if block.get("type") == "tool_use":
+                        code = (block.get("input") or {}).get("code")
+                        assert isinstance(code, str)
+                        python_exec_res = python_exec(code=code)
+                        tool_result_content = anthropic_construct_tool_result_content(
+                            python_exec_res
+                        )
+                        tool_results.append(
+                            {
+                                "type": "tool_result",
+                                "tool_use_id": block.get("id"),
+                                "content": tool_result_content,
+                            }
+                        )
+                history.append({"role": "user", "content": tool_results})
+
+            dspq.put(
+                {
+                    "type": "finish-step",
+                    "turn_number": turn_number,
+                    "step_number": step_number,
+                }
+            )
+
+            if res["stop_reason"] == "end_turn":
+                dspq.join()
+
+                res_text_blocks = [
+                    # concat all text
+                    block.get("text")
+                    for block in res.get("content")
+                    if block.get("type") == "text"
+                ]
+                res_text = "\n".join(res_text_blocks)
+                return res_text
+            elif res["stop_reason"] == "tool_use":
+                pass
+            else:
+                raise RuntimeError(f"Bad stop_reason: {res['stop_reason']}")
 
 
 def anthropic_append_user_message(history: list, message: str):
@@ -1443,6 +1476,8 @@ openai_service_tier: Literal["priority", "default"] | None = None
 
 openai_model: Literal["gpt-5.1", "gpt-5.2"] = "gpt-5.1"
 
+openai_verbosity: Literal["low", "medium", "high"] | None = None
+
 
 def openai_call(
     client: openai.OpenAI,
@@ -1450,6 +1485,7 @@ def openai_call(
 ) -> Any:
     global instructions
     global openai_service_tier
+    global openai_verbosity
 
     if instructions is None:
         instructions = assemble_system_prompt()
@@ -1461,6 +1497,9 @@ def openai_call(
             openai_service_tier = "default"
 
     effort = "xhigh" if openai_model == "gpt-5.2" else "high"
+    response_text_config = (
+        {"verbosity": openai_verbosity} if openai_verbosity else openai.omit
+    )
 
     with client.responses.stream(
         model=openai_model,
@@ -1475,6 +1514,7 @@ def openai_call(
         store=False,
         service_tier=openai_service_tier,
         prompt_cache_retention="24h",
+        text=response_text_config,
     ) as stream:
         current_tool_call_id = None
         for event in stream:
@@ -1510,6 +1550,7 @@ def openai_call(
                         "usage": usage,
                     }
                 )
+                logfire.info("llm_usage", usage=usage)
             elif event.type == "response.output_item.added":
                 if event.item.type == "reasoning":
                     dspq.put(
@@ -1668,7 +1709,7 @@ def openai_construct_function_call_output(result: PythonExecResponse) -> str | l
     return content_blocks
 
 
-@logfire.instrument(record_return=True)
+@logfire.instrument(extract_args=["turn_number"], record_return=True)
 def openai_run_turn(
     client: openai.OpenAI,
     history: list,
@@ -1678,70 +1719,99 @@ def openai_run_turn(
     while True:
         step_number += 1
 
-        dspq.put(
-            {
-                "type": "start-step",
-                "turn_number": turn_number,
-                "step_number": step_number,
-            }
-        )
-
-        final = openai_call(
-            client,
-            history=history,
-        )
-
-        dspq.join()
-
-        history.extend(
-            # convert to a plain value that is json-serializable
-            # this is exactly what the sdk does internally when we pass history back as input
-            openai._utils.transform(
-                final.output,
-                openai.types.responses.response_input_param.ResponseInputParam,
-            )
-        )
-
-        write_history(history)
-
-        function_calls = [
-            item
-            for item in final.output
-            if getattr(item, "type", None) == "function_call"
-            or (isinstance(item, dict) and item.get("type") == "function_call")
-        ]
-
-        if function_calls:
-            tool_outputs = []
-            for fc in function_calls:
-                if fc.name != "python_exec":
-                    raise ValueError(f"openai tried to call unknown tool: {fc.name}")
-
-                result = python_exec(fc.parsed_arguments.code)
-                output = openai_construct_function_call_output(result)
-                wrapper = {
-                    "type": "function_call_output",
-                    "call_id": fc.call_id,
-                    "output": output,
+        with logfire.set_baggage(
+            ai_turn="true",
+            ai_provider="openai",
+            ai_model=openai_model,
+            turn_number=str(turn_number),
+            step_number=str(step_number),
+        ):
+            dspq.put(
+                {
+                    "type": "start-step",
+                    "turn_number": turn_number,
+                    "step_number": step_number,
                 }
-                tool_outputs.append(wrapper)
+            )
 
-            history.extend(tool_outputs)
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    final = openai_call(
+                        client,
+                        history=history,
+                    )
+                    break
+                except httpx.RemoteProtocolError as e:
+                    # OpenAI server occasionally drops connection mid-stream:
+                    # "peer closed connection without sending complete message body (incomplete chunked read)"
+                    if attempt < max_retries - 1:
+                        delay = 5.0 * (2**attempt)  # 5s, 10s, 20s
+                        with logfire.span(
+                            "openai retryable error - sleeping",
+                            exception_type=type(e).__name__,
+                            exception_message=str(e),
+                            delay_seconds=delay,
+                            attempt=attempt + 1,
+                            max_retries=max_retries,
+                        ):
+                            time.sleep(delay)
+                    else:
+                        raise
+
+            dspq.join()
+
+            history.extend(
+                # convert to a plain value that is json-serializable
+                # this is exactly what the sdk does internally when we pass history back as input
+                openai._utils.transform(
+                    final.output,
+                    openai.types.responses.response_input_param.ResponseInputParam,
+                )
+            )
 
             write_history(history)
 
-        dspq.put(
-            {
-                "type": "finish-step",
-                "turn_number": turn_number,
-                "step_number": step_number,
-            }
-        )
+            function_calls = [
+                item
+                for item in final.output
+                if getattr(item, "type", None) == "function_call"
+                or (isinstance(item, dict) and item.get("type") == "function_call")
+            ]
 
-        if not function_calls:
-            dspq.join()
+            if function_calls:
+                tool_outputs = []
+                for fc in function_calls:
+                    if fc.name != "python_exec":
+                        raise ValueError(
+                            f"openai tried to call unknown tool: {fc.name}"
+                        )
 
-            return final.output_text
+                    result = python_exec(fc.parsed_arguments.code)
+                    output = openai_construct_function_call_output(result)
+                    wrapper = {
+                        "type": "function_call_output",
+                        "call_id": fc.call_id,
+                        "output": output,
+                    }
+                    tool_outputs.append(wrapper)
+
+                history.extend(tool_outputs)
+
+                write_history(history)
+
+            dspq.put(
+                {
+                    "type": "finish-step",
+                    "turn_number": turn_number,
+                    "step_number": step_number,
+                }
+            )
+
+            if not function_calls:
+                dspq.join()
+
+                return final.output_text
 
 
 def openai_append_user_message(history: list, message: str):
@@ -1783,7 +1853,7 @@ def openai_validate_history(history: list):
 
 
 # Circuit breaker for Gemini death loops
-def _gemini_should_circuit_break(history: list) -> bool:
+def _gemini_death_loop_circuit_breaker(history: list) -> bool:
     """
     Check if we should circuit break due to death loop.
 
@@ -1852,7 +1922,7 @@ def _gemini_should_circuit_break(history: list) -> bool:
 
     if should_break:
         logfire.warn(
-            "gemini circuit breaker triggered - death loop detected",
+            "gemini death loop circuit breaker triggered",
             call_count=call_count,
             max_consecutive_noops=max_consecutive_noops,
             history=history,
@@ -2074,6 +2144,7 @@ def gemini_dsp_write(res: dict):
             "usage": usage_copy,
         }
     )
+    logfire.info("llm_usage", usage=usage_copy)
 
 
 def gemini_construct_function_response(result: PythonExecResponse) -> dict:
@@ -2100,7 +2171,7 @@ def gemini_construct_function_response(result: PythonExecResponse) -> dict:
                         "mimeType": media_type,
                         "data": b64,
                         "displayName": file_path,
-                    }
+                    },
                 }
             )
             image_refs.append(
@@ -2132,26 +2203,108 @@ def gemini_construct_function_response(result: PythonExecResponse) -> dict:
     return function_response
 
 
-@logfire.instrument(record_return=True)
+@logfire.instrument(extract_args=["turn_number"], record_return=True)
 def gemini_run_turn(history: list, turn_number: int) -> str:
     step_number = 0
     while True:
         step_number += 1
-        dspq.put(
-            {
-                "type": "start-step",
-                "turn_number": turn_number,
-                "step_number": step_number,
-            }
-        )
 
-        res = gemini_call(history)
+        with logfire.set_baggage(
+            ai_turn="true",
+            ai_provider="gemini",
+            ai_model=gemini_model,
+            turn_number=str(turn_number),
+            step_number=str(step_number),
+        ):
+            dspq.put(
+                {
+                    "type": "start-step",
+                    "turn_number": turn_number,
+                    "step_number": step_number,
+                }
+            )
 
-        gemini_dsp_write(res)
-        dspq.join()
+            res = gemini_call(history)
 
-        candidates = res.get("candidates") or []
-        if not candidates:
+            gemini_dsp_write(res)
+            dspq.join()
+
+            candidates = res.get("candidates") or []
+            if not candidates:
+                dspq.put(
+                    {
+                        "type": "finish-step",
+                        "turn_number": turn_number,
+                        "step_number": step_number,
+                    }
+                )
+                dspq.join()
+                raise ValueError("gemini returned no candidates")
+
+            candidate = candidates[0]
+            candidate_content = candidate.get("content") or {}
+            parts = candidate_content.get("parts", [])
+            role = candidate_content.get("role", "model")
+
+            history.append(
+                {
+                    "role": role,
+                    "parts": parts,
+                }
+            )
+            write_history(history)
+
+            function_calls = gemini_extract_function_calls(candidate)
+
+            if not function_calls:
+                dspq.put(
+                    {
+                        "type": "finish-step",
+                        "turn_number": turn_number,
+                        "step_number": step_number,
+                    }
+                )
+                dspq.join()
+
+                text_blocks = [
+                    part.get("text", "")
+                    for part in parts
+                    if part.get("text") and not part.get("thought")
+                ]
+                return "\n".join(text_blocks).strip()
+
+            response_parts = []
+            for call in function_calls:
+                args = call.get("args") or {}
+                code = args.get("code")
+                if not isinstance(code, str):
+                    continue
+                python_exec_result = python_exec(code=code)
+                response_parts.append(
+                    gemini_construct_function_response(python_exec_result)
+                )
+
+            if not response_parts:
+                dspq.put(
+                    {
+                        "type": "finish-step",
+                        "turn_number": turn_number,
+                        "step_number": step_number,
+                    }
+                )
+                dspq.join()
+                raise ValueError(
+                    "gemini requested python_exec but no valid code was returned"
+                )
+
+            history.append(
+                {
+                    "role": "user",
+                    "parts": response_parts,
+                }
+            )
+            write_history(history)
+
             dspq.put(
                 {
                     "type": "finish-step",
@@ -2159,83 +2312,9 @@ def gemini_run_turn(history: list, turn_number: int) -> str:
                     "step_number": step_number,
                 }
             )
-            dspq.join()
-            raise ValueError("gemini returned no candidates")
 
-        candidate = candidates[0]
-        candidate_content = candidate.get("content") or {}
-        parts = candidate_content.get("parts", [])
-        role = candidate_content.get("role", "model")
-
-        history.append(
-            {
-                "role": role,
-                "parts": parts,
-            }
-        )
-        write_history(history)
-
-        function_calls = gemini_extract_function_calls(candidate)
-
-        if not function_calls:
-            dspq.put(
-                {
-                    "type": "finish-step",
-                    "turn_number": turn_number,
-                    "step_number": step_number,
-                }
-            )
-            dspq.join()
-
-            text_blocks = [
-                part.get("text", "")
-                for part in parts
-                if part.get("text") and not part.get("thought")
-            ]
-            return "\n".join(text_blocks).strip()
-
-        response_parts = []
-        for call in function_calls:
-            args = call.get("args") or {}
-            code = args.get("code")
-            if not isinstance(code, str):
-                continue
-            python_exec_result = python_exec(code=code)
-            response_parts.append(
-                gemini_construct_function_response(python_exec_result)
-            )
-
-        if not response_parts:
-            dspq.put(
-                {
-                    "type": "finish-step",
-                    "turn_number": turn_number,
-                    "step_number": step_number,
-                }
-            )
-            dspq.join()
-            raise ValueError(
-                "gemini requested python_exec but no valid code was returned"
-            )
-
-        history.append(
-            {
-                "role": "user",
-                "parts": response_parts,
-            }
-        )
-        write_history(history)
-
-        if _gemini_should_circuit_break(history):
-            return "[CIRCUIT BREAK]"
-
-        dspq.put(
-            {
-                "type": "finish-step",
-                "turn_number": turn_number,
-                "step_number": step_number,
-            }
-        )
+            if _gemini_death_loop_circuit_breaker(history):
+                return "[GEMINI_DEATH_LOOP_CIRCUIT_BREAKER]"
 
 
 def gemini_append_user_message(history: list, message: str):
@@ -2280,6 +2359,7 @@ def get_model_interface():
             "openai",
             "gpt51",
             "gpt52",
+            "gpt52-thinking-xhigh-verbosity-low",
             "anthropic",
             "sonnet",
             "haiku",
@@ -2292,9 +2372,10 @@ def get_model_interface():
     )
     args = parser.parse_args()
     global openai_model
+    global openai_verbosity
     global anthropic_model
     global gemini_model
-    if args.model in ("openai", "gpt51", "gpt52"):
+    if args.model in ("openai", "gpt51", "gpt52", "gpt52-thinking-xhigh-verbosity-low"):
         if args.model == "openai":
             # openai (which is the default) defaults to gpt-5.1
             # this is here for backwards compatibility
@@ -2308,6 +2389,11 @@ def get_model_interface():
             # option for explicitly using gpt-5.2
             model_type = "openai-gpt52"
             openai_model = "gpt-5.2"
+        elif args.model == "gpt52-thinking-xhigh-verbosity-low":
+            # option for gpt-5.2 with xhigh thinking effort but low verbosity output
+            model_type = "openai-gpt52-thinking-xhigh-verbosity-low"
+            openai_model = "gpt-5.2"
+            openai_verbosity = "low"
         else:
             raise AssertionError
 
@@ -2384,7 +2470,7 @@ model_interface = get_model_interface()
 SESSION_NAMESPACE = model_interface["session_namespace"]
 
 
-@logfire.instrument(record_return=True)
+@logfire.instrument(extract_args=False, record_return=True)
 def new_session_id():
     dt = datetime.datetime.now()
     dt_str = dt.strftime("%y-%m-%d-%H-%M-%S")
@@ -2458,7 +2544,7 @@ class RpcRunCommandResult(BaseModel):
     responses: list[JsonRpcResponse]
 
 
-@logfire.instrument
+@logfire.instrument(extract_args=["request"], record_return=False)
 def api_handler(request: JsonRpcRequest, state: dict) -> JsonRpcResponse:
     global session_id
     try:
@@ -2563,7 +2649,7 @@ def api_handler(request: JsonRpcRequest, state: dict) -> JsonRpcResponse:
         )
 
 
-@logfire.instrument
+@logfire.instrument(extract_args=["argv"], record_return=False)
 def handle_slash_command(
     history: list, argv: list[str]
 ) -> tuple[list[JsonRpcRequest], list[JsonRpcResponse]]:
@@ -3176,11 +3262,12 @@ def programmatic_main():
 
 
 def main():
-    with logfire.span("personalbot_main", session_id=session_id):
-        if sys.stdin.isatty():
-            interactive_main()
-        else:
-            programmatic_main()
+    with logfire.set_baggage(session_id=session_id):
+        with logfire.span("personalbot_main"):
+            if sys.stdin.isatty():
+                interactive_main()
+            else:
+                programmatic_main()
 
 
 if __name__ == "__main__":
