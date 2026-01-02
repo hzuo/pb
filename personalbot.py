@@ -117,6 +117,7 @@ logfire.configure(
 logfire.instrument_requests()
 logfire.instrument_httpx()
 
+
 SYSTEM_PROMPT = """
 You are Personal Bot, an advanced Agentic AI assisting the user for a variety of personal tasks.
 
@@ -1865,7 +1866,6 @@ def openai_validate_history(history: list):
     )
 
 
-# Circuit breaker for Gemini death loops
 def _gemini_death_loop_circuit_breaker(history: list) -> bool:
     """
     Check if we should circuit break due to death loop.
