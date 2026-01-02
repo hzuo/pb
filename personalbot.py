@@ -2009,46 +2009,78 @@ def gemini_call(history: list) -> dict:
 
     max_retries = 10
     for attempt in range(max_retries):
-        response = requests.post(
-            f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent",
-            headers={
-                "Content-Type": "application/json",
-                "x-goog-api-key": api_key,
-            },
-            timeout=360,
-            json=request_json,
-        )
+        is_final_attempt = attempt == max_retries - 1
 
-        # Retry on transient errors
-        if (
-            response.status_code in {408, 413, 429, 500, 502, 503, 504, 529}
-            and attempt < max_retries - 1
+        # Set baggage for non-final attempts so auto-instrumented HTTP errors are filterable
+        with logfire.set_baggage(
+            **({"is_retryable_attempt": "true"} if not is_final_attempt else {})
         ):
-            # 30s base + exponential backoff, capped at 600s
-            # 35s, 40s, 50s, 70s, 110s, 190s, 350s, 600s (capped at 8th attempt)
-            base_delay = min(30.0 + 5.0 * (2**attempt), 600.0)
-            jitter = random.uniform(0, 120)
-            total_delay = base_delay + jitter
-            with logfire.span(
-                "gemini retryable error - sleeping",
-                status_code=response.status_code,
-                total_delay_seconds=total_delay,
-                base_delay_seconds=base_delay,
-                jitter_seconds=jitter,
-                attempt=attempt + 1,
-                max_retries=max_retries,
-            ):
-                time.sleep(total_delay)
-            continue
+            try:
+                response = requests.post(
+                    f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent",
+                    headers={
+                        "Content-Type": "application/json",
+                        "x-goog-api-key": api_key,
+                    },
+                    timeout=180,
+                    json=request_json,
+                )
+            except (
+                requests.exceptions.ReadTimeout,
+                requests.exceptions.ConnectionError,
+            ) as e:
+                if not is_final_attempt:
+                    # Same backoff logic as HTTP status codes
+                    base_delay = min(30.0 + 5.0 * (2**attempt), 600.0)
+                    jitter = random.uniform(0, 120)
+                    total_delay = base_delay + jitter
+                    with logfire.span(
+                        "gemini retryable error - sleeping",
+                        site=1,
+                        exception_type=type(e).__name__,
+                        exception_message=str(e),
+                        total_delay_seconds=total_delay,
+                        base_delay_seconds=base_delay,
+                        jitter_seconds=jitter,
+                        attempt=attempt + 1,
+                        max_retries=max_retries,
+                    ):
+                        time.sleep(total_delay)
+                    continue
+                else:
+                    raise
 
-        if not response.ok:
-            dspq.put(
-                {
-                    "type": "error",
-                    "errorText": f"gemini error! {response.text}",
-                }
-            )
-        break
+            # Retry on transient HTTP errors
+            if (
+                response.status_code in {408, 413, 429, 500, 502, 503, 504, 529}
+                and not is_final_attempt
+            ):
+                # 30s base + exponential backoff, capped at 600s
+                # 35s, 40s, 50s, 70s, 110s, 190s, 350s, 600s (capped at 8th attempt)
+                base_delay = min(30.0 + 5.0 * (2**attempt), 600.0)
+                jitter = random.uniform(0, 120)
+                total_delay = base_delay + jitter
+                with logfire.span(
+                    "gemini retryable error - sleeping",
+                    site=2,
+                    status_code=response.status_code,
+                    total_delay_seconds=total_delay,
+                    base_delay_seconds=base_delay,
+                    jitter_seconds=jitter,
+                    attempt=attempt + 1,
+                    max_retries=max_retries,
+                ):
+                    time.sleep(total_delay)
+                continue
+
+            if not response.ok:
+                dspq.put(
+                    {
+                        "type": "error",
+                        "errorText": f"gemini error! {response.text}",
+                    }
+                )
+            break
 
     response.raise_for_status()
     return response.json()
@@ -2592,6 +2624,7 @@ def api_handler(request: JsonRpcRequest, state: dict) -> JsonRpcResponse:
             try:
                 params = RpcPromptParams.model_validate(request.params)
             except Exception as e:
+                logfire.exception("api_handler invalid params", request=request)
                 return JsonRpcResponse(
                     error=JsonRpcError(
                         code=-32602,
@@ -2636,6 +2669,7 @@ def api_handler(request: JsonRpcRequest, state: dict) -> JsonRpcResponse:
             try:
                 params = RpcPythonExecParams.model_validate(request.params)
             except Exception as e:
+                logfire.exception("api_handler invalid params", request=request)
                 return JsonRpcResponse(
                     error=JsonRpcError(
                         code=-32602,
@@ -2657,6 +2691,7 @@ def api_handler(request: JsonRpcRequest, state: dict) -> JsonRpcResponse:
             try:
                 params = RpcRunCommandParams.model_validate(request.params)
             except Exception as e:
+                logfire.exception("api_handler invalid params", request=request)
                 return JsonRpcResponse(
                     error=JsonRpcError(
                         code=-32602,
@@ -2674,11 +2709,13 @@ def api_handler(request: JsonRpcRequest, state: dict) -> JsonRpcResponse:
             )
             return JsonRpcResponse(result=result, id=request.id)
         else:
+            logfire.warn("api_handler unknown method", request=request)
             return JsonRpcResponse(
                 error=JsonRpcError(code=-32601, message="Unknown method", data=request),
                 id=request.id,
             )
     except Exception as e:
+        logfire.exception("api_handler unexpected error", request=request)
         return JsonRpcResponse(
             error=JsonRpcError(code=1, message=f"Unexpected error: {e}", data=request),
             id=request.id,
@@ -2981,12 +3018,33 @@ def handle_slash_command(
             response = api_handler(request, state)
             requests.append(request)
             responses.append(response)
+
+            # stop execution if page returned an error
+            if response.error is not None:
+                logfire.warn(
+                    "command page returned error, stopping execution",
+                    site=1,
+                    page_id=next_id,
+                    page_index=found_index,
+                    response=response,
+                )
+                break
     else:
         for i, _ in enumerate(parsed_pages):
             request = page_to_request(i)
             response = api_handler(request, state)
             requests.append(request)
             responses.append(response)
+
+            # stop execution if page returned an error
+            if response.error is not None:
+                logfire.warn(
+                    "command page returned error, stopping execution",
+                    site=2,
+                    page_index=i,
+                    response=response,
+                )
+                break
 
     return requests, responses
 
