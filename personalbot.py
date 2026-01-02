@@ -620,7 +620,7 @@ class Helpers:
                     },
                 ],
             },
-            timeout=360,
+            timeout=180,
         )
 
         try:
